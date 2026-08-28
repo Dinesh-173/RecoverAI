@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - PORT=8000
+      - DATABASE_URL=sqlite+aiosqlite:///./recoverai.db
+      - LLM_PROVIDER=mock
+      - DEMO_MODE=true
+      - RAZORPAY_KEY_ID=rzp_test_mockkey12345
+      - RAZORPAY_KEY_SECRET=mocksecret12345
+      - RAZORPAY_WEBHOOK_SECRET=mockwebhooksecret12345
+    volumes:
+      - ./recoverai.db:/app/recoverai.db
+      - ./ml/models:/app/ml/models
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000/api/v1
+    depends_on:
+      - backend
+    restart: unless-stopped

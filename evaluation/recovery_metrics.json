@@ -1,0 +1,26 @@
+{
+  "total_evaluated_transactions": 3000,
+  "revenue_at_risk": 31815249.85,
+  "baseline_performance": {
+    "strategy": "Blind Retry Once",
+    "recovered_revenue": 10428561.11,
+    "recovery_rate_pct": 32.78,
+    "recovered_count": 1033,
+    "wasted_retries": 1238
+  },
+  "recoverai_performance": {
+    "strategy": "ML + AI Diagnostic Agent + Policy Engine",
+    "recovered_revenue": 16366824.55,
+    "recovery_rate_pct": 51.44,
+    "recovered_count": 1674,
+    "escalated_to_human": 542,
+    "stopped_cases": 872,
+    "avoided_wasteful_retries": 803
+  },
+  "impact_delta": {
+    "additional_revenue_recovered": 5938263.44,
+    "relative_improvement_percentage": 56.94,
+    "human_escalation_rate_pct": 18.07,
+    "stopped_case_rate_pct": 29.07
+  }
+}
