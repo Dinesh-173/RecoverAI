@@ -79,13 +79,10 @@ class RecoveryService:
             "communication_opt_out": customer.communication_opt_out,
             "email": "customer@example.com", # Masked representation
         }
-        merchant_policy = {
-            "high_value_threshold": merchant.high_value_threshold if merchant else 10000.0,
-            "max_retries": merchant.max_retries if merchant else 2,
-            "min_ai_confidence": merchant.min_ai_confidence if merchant else 0.70,
-            "min_recovery_score": merchant.min_recovery_score if merchant else 15.0,
-            "cooldown_minutes": merchant.cooldown_minutes if merchant else 60,
-        }
+        from backend.app.models.merchant_policy import MerchantPolicy
+
+        policy_row = merchant.policy if merchant else None
+        merchant_policy = policy_row.to_engine_dict() if policy_row else MerchantPolicy.engine_defaults()
 
         assessment = await RiskAssessmentService.assess_transaction(db, tx.id, tx_data, cust_data)
 
@@ -223,6 +220,7 @@ class RecoveryService:
         # Create action record
         action_record = RecoveryAction(
             recovery_case_id=rec_case.id,
+            transaction_id=tx.id,
             action_type=action_type,
             status="EXECUTING",
             amount=tx.amount,

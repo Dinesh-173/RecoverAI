@@ -38,6 +38,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
-    """Initialize tables in the database (used in test & dev environments)."""
+    """Create tables from ORM metadata (dev/tests). Production schema is Alembic."""
+    from backend.app import models  # noqa: F401
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

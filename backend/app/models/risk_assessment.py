@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey, Float
+from sqlalchemy import Column, String, DateTime, ForeignKey, Float, Numeric
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 import uuid
@@ -12,7 +12,7 @@ class RevenueRiskAssessment(Base):
     id = Column(String(64), primary_key=True, default=lambda: f"rra_{uuid.uuid4().hex[:12]}")
     transaction_id = Column(String(64), ForeignKey("transactions.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
     risk_score = Column(Float, nullable=False) # 0.0 to 100.0 (Higher means greater revenue loss risk)
-    expected_recoverable_amount = Column(Float, nullable=False) # Amount * recovery_probability
+    expected_recoverable_amount = Column(Numeric(14, 2), nullable=False)
     confidence = Column(Float, nullable=False) # Model confidence 0.0 to 1.0
     model_version = Column(String(50), nullable=False, default="v1.0.0-xgb")
     features_version = Column(String(50), nullable=False, default="v1.0.0")

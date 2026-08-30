@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Numeric, Integer, Boolean, ForeignKey, Float
+from sqlalchemy import Column, String, DateTime, Numeric, Integer, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 import uuid
@@ -16,7 +16,7 @@ class Customer(Base):
     customer_segment = Column(String(50), nullable=False, default="STANDARD")  # VIP, HIGH_VALUE, STANDARD, AT_RISK
     successful_payment_count = Column(Integer, nullable=False, default=0)
     failed_payment_count = Column(Integer, nullable=False, default=0)
-    total_lifetime_value = Column(Float, nullable=False, default=0.0)
+    total_lifetime_value = Column(Numeric(14, 2), nullable=False, default=0.00)
     last_payment_at = Column(DateTime(timezone=True), nullable=True)
     communication_opt_out = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

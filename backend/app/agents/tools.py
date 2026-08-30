@@ -5,6 +5,7 @@ from sqlalchemy import select
 from backend.app.models.transaction import Transaction
 from backend.app.models.customer import Customer
 from backend.app.models.merchant import Merchant
+from backend.app.models.merchant_policy import MerchantPolicy
 from backend.app.models.risk_assessment import RevenueRiskAssessment
 
 
@@ -54,24 +55,12 @@ class AgentToolLayer:
 
     @staticmethod
     async def get_merchant_policy(db: AsyncSession, merchant_id: str) -> Dict[str, Any]:
-        stmt = select(Merchant).where(Merchant.id == merchant_id)
+        stmt = select(MerchantPolicy).where(MerchantPolicy.merchant_id == merchant_id)
         result = await db.execute(stmt)
-        merchant = result.scalar_one_or_none()
-        if not merchant:
-            return {
-                "high_value_threshold": 10000.0,
-                "max_retries": 2,
-                "min_ai_confidence": 0.70,
-                "min_recovery_score": 15.0,
-                "cooldown_minutes": 60
-            }
-        return {
-            "high_value_threshold": merchant.high_value_threshold,
-            "max_retries": merchant.max_retries,
-            "min_ai_confidence": merchant.min_ai_confidence,
-            "min_recovery_score": merchant.min_recovery_score,
-            "cooldown_minutes": merchant.cooldown_minutes
-        }
+        policy = result.scalar_one_or_none()
+        if not policy:
+            return MerchantPolicy.engine_defaults()
+        return policy.to_engine_dict()
 
     @staticmethod
     def calculate_recovery_score(
