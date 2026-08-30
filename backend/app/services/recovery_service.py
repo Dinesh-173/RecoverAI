@@ -11,7 +11,7 @@ from backend.app.models.recovery_case import RecoveryCase
 from backend.app.models.recovery_action import RecoveryAction
 from backend.app.models.risk_assessment import RevenueRiskAssessment
 from backend.app.services.risk_service import RiskAssessmentService
-from backend.app.services.audit_service import AuditService
+from backend.app.services.audit_service import AuditService, _to_json_safe
 from backend.app.agents.recovery_agent import RecoveryDiagnosticAgent
 from backend.app.agents.tools import AgentToolLayer
 from backend.app.policies.engine import DeterministicPolicyEngine
@@ -241,13 +241,13 @@ class RecoveryService:
             result_payload = await provider.execute_bounded_recovery(
                 transaction_id=tx.id,
                 action_type=action_type,
-                amount=tx.amount,
+                amount=float(tx.amount),
                 currency=tx.currency,
                 customer_info=customer_info,
             )
 
             action_record.status = "SUCCESS"
-            action_record.result_json = result_payload
+            action_record.result_json = _to_json_safe(result_payload)
             action_record.executed_at = datetime.now(timezone.utc)
 
             # Update case status based on outcome
@@ -257,7 +257,7 @@ class RecoveryService:
                 rec_case.status = "RECOVERED"
                 # Update customer stats
                 customer.successful_payment_count += 1
-                customer.total_lifetime_value += tx.amount
+                customer.total_lifetime_value = float(customer.total_lifetime_value or 0.0) + float(tx.amount)
                 customer.last_payment_at = datetime.now(timezone.utc)
                 tx.status = "CAPTURED"
 
