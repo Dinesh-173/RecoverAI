@@ -5,6 +5,18 @@ from backend.app.core.security import generate_correlation_id
 from backend.app.core.logging import logger
 
 
+from decimal import Decimal
+
+def _to_json_safe(obj: Any) -> Any:
+    if isinstance(obj, Decimal):
+        return float(obj)
+    if isinstance(obj, dict):
+        return {k: _to_json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_to_json_safe(v) for v in obj]
+    return obj
+
+
 class AuditService:
     @staticmethod
     async def log_event(
@@ -27,8 +39,8 @@ class AuditService:
         corr_id = correlation_id or generate_correlation_id()
         
         # Sanitize summaries
-        clean_input = input_summary or {}
-        clean_output = output_summary or {}
+        clean_input = _to_json_safe(input_summary or {})
+        clean_output = _to_json_safe(output_summary or {})
 
         audit_entry = AuditLog(
             entity_type=entity_type,

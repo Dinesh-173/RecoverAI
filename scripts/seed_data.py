@@ -20,19 +20,24 @@ from backend.app.services.risk_service import RiskAssessmentService
 from backend.app.services.recovery_service import RecoveryService
 
 
-async def seed_database(num_transactions: int = 150, seed: int = 42):
+from typing import Optional
+
+async def seed_database(num_transactions: int = 150, seed: int = 42, db: Optional[AsyncSession] = None):
     """
     Seeds the database with deterministic sample merchant, customers,
     and transactions for immediate local exploration and live UI demonstration.
     """
     random.seed(seed)
     print(f"Initializing database schema...")
-    await init_db()
+    if not db:
+        await init_db()
 
-    async with AsyncSessionLocal() as db:
+    session_context = db if db else AsyncSessionLocal()
+    
+    async def _do_seed(session: AsyncSession):
         print("Checking for existing merchant...")
         stmt_m = select(Merchant).where(Merchant.id == "mer_apex_digital_01")
-        res_m = await db.execute(stmt_m)
+        res_m = await session.execute(stmt_m)
         merchant = res_m.scalar_one_or_none()
         if not merchant:
             merchant = Merchant(
@@ -49,9 +54,9 @@ async def seed_database(num_transactions: int = 150, seed: int = 42):
                     max_contact_attempts=2,
                 ),
             )
-            db.add(merchant)
-            await db.commit()
-            await db.refresh(merchant)
+            session.add(merchant)
+            await session.commit()
+            await session.refresh(merchant)
 
         print("Generating customer pool...")
         customer_names = [
@@ -79,11 +84,11 @@ async def seed_database(num_transactions: int = 150, seed: int = 42):
                 total_lifetime_value=ltv,
                 communication_opt_out=opt_out,
             )
-            db.add(c)
+            session.add(c)
             customers.append(c)
-        await db.commit()
+        await session.commit()
         for c in customers:
-            await db.refresh(c)
+            await session.refresh(c)
 
         print(f"Generating {num_transactions} realistic transaction records...")
         methods = ["UPI", "CARD", "NETBANKING", "WALLET"]
@@ -129,19 +134,19 @@ async def seed_database(num_transactions: int = 150, seed: int = 42):
                 created_at=tx_time,
                 updated_at=tx_time,
             )
-            db.add(tx)
+            session.add(tx)
             created_txs.append(tx)
 
-        await db.commit()
+        await session.commit()
         for tx in created_txs:
-            await db.refresh(tx)
+            await session.refresh(tx)
 
         print("Running initial RecoverAI diagnostic analysis across seed batch...")
         # Process a subset of transactions through recovery engine to populate cases & audits
         for tx in created_txs[:40]:
             try:
                 await RecoveryService.analyze_transaction(
-                    db=db,
+                    db=session,
                     transaction_id=tx.id,
                     correlation_id=f"seed_corr_{tx.id[:8]}",
                     force_simulation=True,
@@ -151,11 +156,11 @@ async def seed_database(num_transactions: int = 150, seed: int = 42):
 
         # Execute some approved cases to create initial recovered revenue
         stmt_cases = select(RecoveryCase).where(RecoveryCase.status == "EXECUTING").limit(15)
-        res_cases = await db.execute(stmt_cases)
+        res_cases = await session.execute(stmt_cases)
         for c in res_cases.scalars().all():
             try:
                 await RecoveryService.execute_action(
-                    db=db,
+                    db=session,
                     case_id=c.id,
                     correlation_id=f"seed_exec_{c.id[:8]}",
                     force_simulation=True,
@@ -164,6 +169,12 @@ async def seed_database(num_transactions: int = 150, seed: int = 42):
                 pass
 
         print("Database seeding completed successfully.")
+
+    if db:
+        await _do_seed(db)
+    else:
+        async with session_context as s:
+            await _do_seed(s)
 
 
 if __name__ == "__main__":
