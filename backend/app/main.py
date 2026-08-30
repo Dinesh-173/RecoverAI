@@ -137,7 +137,7 @@ async def health_check(db: AsyncSession = Depends(get_db)):
         db_status = "UNHEALTHY"
 
     is_healthy = db_status == "HEALTHY"
-    status_code = status.HTTP_200_OK if is_healthy else status.HTTP_530_SERVICE_UNAVAILABLE
+    status_code = status.HTTP_200_OK if is_healthy else status.HTTP_503_SERVICE_UNAVAILABLE
 
     return JSONResponse(
         status_code=status_code,

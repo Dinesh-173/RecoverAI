@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.core.database import get_db
 from backend.app.services.transaction_service import TransactionService
 from backend.app.schemas.schemas import TransactionCreate
+from backend.app.core.security import require_role
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
@@ -19,6 +20,7 @@ async def list_transactions(
     min_amount: Optional[float] = None,
     max_amount: Optional[float] = None,
     db: AsyncSession = Depends(get_db),
+    _role: str = Depends(require_role(["MERCHANT_ADMIN", "ADMIN", "MERCHANT_OPERATOR", "VIEWER"])),
 ):
     """List transactions with multi-filtering and pagination."""
     items, total = await TransactionService.get_transactions(
@@ -40,13 +42,21 @@ async def list_transactions(
 
 
 @router.get("/{transaction_id}")
-async def get_transaction(transaction_id: str, db: AsyncSession = Depends(get_db)):
+async def get_transaction(
+    transaction_id: str,
+    db: AsyncSession = Depends(get_db),
+    _role: str = Depends(require_role(["MERCHANT_ADMIN", "ADMIN", "MERCHANT_OPERATOR", "VIEWER"])),
+):
     """Fetch complete transaction context, risk assessment, and recovery case history."""
     return await TransactionService.get_transaction_by_id(db, transaction_id)
 
 
 @router.post("")
-async def create_transaction(data: TransactionCreate, db: AsyncSession = Depends(get_db)):
+async def create_transaction(
+    data: TransactionCreate,
+    db: AsyncSession = Depends(get_db),
+    _role: str = Depends(require_role(["MERCHANT_ADMIN", "ADMIN", "MERCHANT_OPERATOR"])),
+):
     """Ingest a new transaction."""
     tx = await TransactionService.create_transaction(db, data)
     return {"status": "SUCCESS", "id": tx.id}

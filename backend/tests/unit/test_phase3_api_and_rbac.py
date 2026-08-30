@@ -131,6 +131,56 @@ async def test_rbac_operator_blocked_from_approval(client: AsyncClient, db_sessi
 
 
 @pytest.mark.asyncio
+async def test_rbac_admin_and_operator_permitted_operations(client: AsyncClient, db_session):
+    # OPERATOR permitted to run simulation
+    op_headers = {"X-User-Role": "MERCHANT_OPERATOR"}
+    resp_sim = await client.post(
+        "/api/v1/simulation/run",
+        json={"scenario_name": "predefined_5_scenarios", "batch_size": 5},
+        headers=op_headers,
+    )
+    assert resp_sim.status_code == 200
+
+    # Setup test case for approval
+    merchant = Merchant(
+        id="mer_rbac_02",
+        name="RBAC Admin Merchant",
+        policy=MerchantPolicy(high_value_threshold=5000.0),
+    )
+    customer = Customer(
+        id="cust_rbac_02",
+        merchant_id="mer_rbac_02",
+        name="RBAC Admin User",
+        email_hash=hash_identifier("rbac_admin@user.com"),
+    )
+    tx = Transaction(
+        id="tx_rbac_02",
+        merchant_id="mer_rbac_02",
+        customer=customer,
+        amount=15000.0,
+        status="FAILED",
+    )
+    case = RecoveryCase(
+        id="case_rbac_02",
+        transaction_id="tx_rbac_02",
+        status="WAITING_APPROVAL",
+        requires_human_approval=True,
+        recommended_action="RETRY_PAYMENT",
+    )
+    db_session.add(merchant)
+    db_session.add(customer)
+    db_session.add(tx)
+    db_session.add(case)
+    await db_session.commit()
+
+    # ADMIN permitted to approve
+    admin_headers = {"X-User-Role": "MERCHANT_ADMIN"}
+    resp_app = await client.post("/api/v1/recovery-cases/case_rbac_02/approve", headers=admin_headers)
+    assert resp_app.status_code == 200
+    assert resp_app.json()["status"] == "APPROVED_AND_EXECUTED"
+
+
+@pytest.mark.asyncio
 async def test_rbac_viewer_allowed_read_only(client: AsyncClient):
     headers = {"X-User-Role": "VIEWER"}
 
@@ -145,3 +195,28 @@ async def test_rbac_viewer_allowed_read_only(client: AsyncClient):
 
     resp_al = await client.get("/api/v1/audit-logs", headers=headers)
     assert resp_al.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_rbac_invalid_and_malformed_roles(client: AsyncClient):
+    # 1. Lowercase valid role is normalized & accepted
+    resp_low = await client.get("/api/v1/transactions", headers={"X-User-Role": "viewer"})
+    assert resp_low.status_code == 200
+
+    # 2. Invalid role is rejected with 403
+    resp_inv = await client.get("/api/v1/transactions", headers={"X-User-Role": "INVALID_HACKER_ROLE"})
+    assert resp_inv.status_code == 403
+    assert "error" in resp_inv.json()
+    assert resp_inv.json()["error"]["code"] == "FORBIDDEN_OPERATION"
+
+
+from unittest.mock import patch
+
+@pytest.mark.asyncio
+async def test_health_check_db_failure_returns_unhealthy(client: AsyncClient):
+    with patch("sqlalchemy.ext.asyncio.AsyncSession.execute", side_effect=Exception("Database connection lost")):
+        resp = await client.get("/health")
+        assert resp.status_code == 503
+        data = resp.json()
+        assert data["status"] == "UNHEALTHY"
+        assert data["dependencies"]["database"] == "UNHEALTHY"

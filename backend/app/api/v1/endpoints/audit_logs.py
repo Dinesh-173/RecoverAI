@@ -5,6 +5,7 @@ from sqlalchemy import select, desc
 
 from backend.app.core.database import get_db
 from backend.app.models.audit_log import AuditLog
+from backend.app.core.security import require_role
 
 router = APIRouter(prefix="/audit-logs", tags=["Audit Logs"])
 
@@ -18,6 +19,7 @@ async def list_audit_logs(
     action: Optional[str] = None,
     correlation_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
+    _role: str = Depends(require_role(["MERCHANT_ADMIN", "ADMIN", "MERCHANT_OPERATOR", "VIEWER"])),
 ):
     """Retrieve immutable audit logs with correlation IDs and policy results."""
     stmt = select(AuditLog).order_by(desc(AuditLog.timestamp))
