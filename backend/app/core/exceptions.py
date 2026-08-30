@@ -22,7 +22,7 @@ class PolicyViolationException(RecoverAIException):
         super().__init__(
             code="RECOVERY_POLICY_BLOCKED",
             message=message,
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             details=details,
         )
 
