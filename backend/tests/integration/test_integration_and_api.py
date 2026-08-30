@@ -4,6 +4,7 @@ import hashlib
 import json
 from httpx import AsyncClient
 from backend.app.models.merchant import Merchant
+from backend.app.models.merchant_policy import MerchantPolicy
 from backend.app.models.customer import Customer
 from backend.app.models.transaction import Transaction
 from backend.app.core.security import hash_identifier
@@ -91,7 +92,11 @@ async def test_simulation_batch_runner_predefined_scenarios(client: AsyncClient,
 @pytest.mark.asyncio
 async def test_end_to_end_recovery_lifecycle(client: AsyncClient, db_session):
     # 1. Create Merchant & Customer & Failed Transaction
-    merchant = Merchant(id="mer_test_01", name="Test Merchant", high_value_threshold=10000.0)
+    merchant = Merchant(
+        id="mer_test_01",
+        name="Test Merchant",
+        policy=MerchantPolicy(high_value_threshold=10000.0),
+    )
     customer = Customer(
         id="cust_test_01",
         merchant_id="mer_test_01",

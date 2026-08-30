@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from backend.app.core.database import get_db
 from backend.app.models.merchant import Merchant
+from backend.app.models.merchant_policy import MerchantPolicy
 from backend.app.models.customer import Customer
 from backend.app.models.transaction import Transaction
 from backend.app.models.recovery_case import RecoveryCase
@@ -44,11 +45,15 @@ async def run_recovery_simulation(
             id="mer_demo_razorpay",
             name="Apex Digital Retail",
             business_category="ECOMMERCE",
-            high_value_threshold=10000.0,
-            max_retries=2,
-            min_ai_confidence=0.70,
-            min_recovery_score=15.0,
-            cooldown_minutes=60,
+            currency="INR",
+            policy=MerchantPolicy(
+                max_retry_attempts=2,
+                high_value_threshold=10000.0,
+                min_recovery_score=15.0,
+                min_ai_confidence=0.70,
+                contact_cooldown_minutes=60,
+                max_contact_attempts=2,
+            ),
         )
         db.add(merchant)
         await db.commit()

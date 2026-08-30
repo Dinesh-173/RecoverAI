@@ -73,5 +73,8 @@ class AgentToolLayer:
         recovery_score = probability_of_recovery * expected_recoverable_amount * action_success_probability / 100
         Normalized to a clean scalar score.
         """
-        raw = probability_of_recovery * (expected_recoverable_amount / 100.0) * action_success_probability
+        prob = float(probability_of_recovery)
+        amt = float(expected_recoverable_amount)
+        succ = float(action_success_probability)
+        raw = prob * (amt / 100.0) * succ
         return round(float(raw), 2)

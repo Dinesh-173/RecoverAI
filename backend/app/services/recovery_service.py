@@ -81,7 +81,12 @@ class RecoveryService:
         }
         from backend.app.models.merchant_policy import MerchantPolicy
 
-        policy_row = merchant.policy if merchant else None
+        policy_row = None
+        if merchant:
+            stmt_pol = select(MerchantPolicy).where(MerchantPolicy.merchant_id == merchant.id)
+            res_pol = await db.execute(stmt_pol)
+            policy_row = res_pol.scalar_one_or_none()
+
         merchant_policy = policy_row.to_engine_dict() if policy_row else MerchantPolicy.engine_defaults()
 
         assessment = await RiskAssessmentService.assess_transaction(db, tx.id, tx_data, cust_data)

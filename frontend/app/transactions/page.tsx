@@ -11,12 +11,12 @@ import {
   CreditCard,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
-import { TransactionItem } from "@/lib/types";
+import { Transaction } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
@@ -51,7 +51,8 @@ export default function TransactionsPage() {
   const filtered = transactions.filter(
     (t) =>
       t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (t.customer_name && t.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (t.customer?.name && t.customer.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (t.external_transaction_id && t.external_transaction_id.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -157,9 +158,9 @@ export default function TransactionsPage() {
                       )}
                     </td>
                     <td className="px-5 py-3.5">
-                      <div className="font-medium text-slate-200">{tx.customer_name}</div>
+                      <div className="font-medium text-slate-200">{tx.customer_name || tx.customer?.name || "Customer"}</div>
                       <div className="text-[11px] text-muted flex items-center gap-1.5 mt-0.5">
-                        <StatusBadge status={tx.customer_segment} size="sm" />
+                        <StatusBadge status={tx.customer_segment || tx.customer?.customer_segment || "STANDARD"} size="sm" />
                       </div>
                     </td>
                     <td className="px-5 py-3.5 font-semibold text-white">
@@ -200,7 +201,7 @@ export default function TransactionsPage() {
                       )}
                     </td>
                     <td className="px-5 py-3.5">
-                      <StatusBadge status={tx.case_status} size="sm" />
+                      <StatusBadge status={tx.case_status || "OPEN"} size="sm" />
                     </td>
                     <td className="px-5 py-3.5 text-xs text-muted">
                       {formatDate(tx.created_at)}
