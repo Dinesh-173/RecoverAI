@@ -62,3 +62,12 @@ class UnauthorizedApprovalException(RecoverAIException):
             message=message,
             status_code=status.HTTP_403_FORBIDDEN,
         )
+
+
+class ForbiddenException(RecoverAIException):
+    def __init__(self, message: str = "Role not authorized to perform this operation."):
+        super().__init__(
+            code="FORBIDDEN_OPERATION",
+            message=message,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )

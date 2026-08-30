@@ -54,3 +54,29 @@ def mask_email(email: str) -> str:
 def hash_identifier(value: str) -> str:
     """Generate a deterministic SHA-256 hash for privacy-safe customer deduplication."""
     return hashlib.sha256(value.strip().lower().encode("utf-8")).hexdigest()
+
+
+from typing import List
+from fastapi import Header, Depends
+from backend.app.core.exceptions import ForbiddenException, UnauthorizedApprovalException
+
+def require_role(allowed_roles: List[str]):
+    """
+    FastAPI dependency factory enforcing Role-Based Access Control (RBAC).
+    Extracts role from X-User-Role header (defaults to MERCHANT_ADMIN if omitted).
+    """
+    async def role_checker(
+        x_user_role: Optional[str] = Header(None),
+    ) -> str:
+        role = (x_user_role or "MERCHANT_ADMIN").upper()
+        normalized_allowed = [r.upper() for r in allowed_roles]
+        if role not in normalized_allowed:
+            if set(normalized_allowed) == {"MERCHANT_ADMIN", "ADMIN"}:
+                raise UnauthorizedApprovalException(
+                    f"User role '{role}' is not authorized. Allowed roles: {allowed_roles}"
+                )
+            raise ForbiddenException(
+                f"User role '{role}' is not authorized for this endpoint. Allowed roles: {allowed_roles}"
+            )
+        return role
+    return role_checker

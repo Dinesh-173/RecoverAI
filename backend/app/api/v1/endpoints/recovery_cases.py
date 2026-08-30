@@ -8,7 +8,8 @@ from backend.app.core.database import get_db
 from backend.app.models.recovery_case import RecoveryCase
 from backend.app.models.transaction import Transaction
 from backend.app.services.recovery_service import RecoveryService
-from backend.app.core.security import generate_correlation_id
+from backend.app.core.security import generate_correlation_id, require_role
+from backend.app.core.exceptions import ResourceNotFoundException
 
 router = APIRouter(prefix="/recovery-cases", tags=["Recovery Cases"])
 
@@ -21,6 +22,7 @@ async def list_recovery_cases(
     risk_level: Optional[str] = None,
     requires_approval: Optional[bool] = None,
     db: AsyncSession = Depends(get_db),
+    _role: str = Depends(require_role(["MERCHANT_ADMIN", "ADMIN", "MERCHANT_OPERATOR", "VIEWER"])),
 ):
     """List recovery cases with filtering by status and risk level."""
     stmt = (
@@ -68,7 +70,11 @@ async def list_recovery_cases(
 
 
 @router.get("/{case_id}")
-async def get_recovery_case(case_id: str, db: AsyncSession = Depends(get_db)):
+async def get_recovery_case(
+    case_id: str,
+    db: AsyncSession = Depends(get_db),
+    _role: str = Depends(require_role(["MERCHANT_ADMIN", "ADMIN", "MERCHANT_OPERATOR", "VIEWER"])),
+):
     """Fetch complete recovery case diagnostics, timeline, and execution history."""
     stmt = (
         select(RecoveryCase)
@@ -83,7 +89,7 @@ async def get_recovery_case(case_id: str, db: AsyncSession = Depends(get_db)):
     res = await db.execute(stmt)
     c = res.scalar_one_or_none()
     if not c:
-        return {"error": {"code": "RESOURCE_NOT_FOUND", "message": f"RecoveryCase {case_id} not found."}}
+        raise ResourceNotFoundException("RecoveryCase", case_id)
 
     tx = c.transaction
     return {
@@ -142,13 +148,14 @@ async def analyze_case(
     case_id: str,
     x_correlation_id: Optional[str] = Header(None),
     db: AsyncSession = Depends(get_db),
+    _role: str = Depends(require_role(["MERCHANT_ADMIN", "ADMIN", "MERCHANT_OPERATOR"])),
 ):
     """Trigger ML scoring & AI diagnostic analysis for a case."""
     stmt = select(RecoveryCase).where(RecoveryCase.id == case_id)
     res = await db.execute(stmt)
     c = res.scalar_one_or_none()
     if not c:
-        return {"error": {"code": "RESOURCE_NOT_FOUND", "message": f"RecoveryCase {case_id} not found."}}
+        raise ResourceNotFoundException("RecoveryCase", case_id)
 
     corr_id = x_correlation_id or generate_correlation_id()
     updated_case = await RecoveryService.analyze_transaction(
@@ -172,6 +179,7 @@ async def execute_case_action(
     case_id: str,
     x_correlation_id: Optional[str] = Header(None),
     db: AsyncSession = Depends(get_db),
+    _role: str = Depends(require_role(["MERCHANT_ADMIN", "ADMIN", "MERCHANT_OPERATOR"])),
 ):
     """Execute the policy-approved recovery action for this case."""
     corr_id = x_correlation_id or generate_correlation_id()

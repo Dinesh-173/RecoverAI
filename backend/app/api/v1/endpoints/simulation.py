@@ -14,7 +14,7 @@ from backend.app.models.transaction import Transaction
 from backend.app.models.recovery_case import RecoveryCase
 from backend.app.services.recovery_service import RecoveryService
 from backend.app.schemas.schemas import SimulationRunRequest, SimulationRunResponse
-from backend.app.core.security import hash_identifier
+from backend.app.core.security import hash_identifier, require_role
 
 router = APIRouter(prefix="/simulation", tags=["Simulation & Demo"])
 
@@ -23,6 +23,7 @@ router = APIRouter(prefix="/simulation", tags=["Simulation & Demo"])
 async def run_recovery_simulation(
     request: SimulationRunRequest = SimulationRunRequest(),
     db: AsyncSession = Depends(get_db),
+    _role: str = Depends(require_role(["MERCHANT_ADMIN", "ADMIN", "MERCHANT_OPERATOR"])),
 ):
     """
     Executes a batch recovery simulation or predefined scenarios.

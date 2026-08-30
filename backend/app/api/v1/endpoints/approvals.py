@@ -8,7 +8,7 @@ from backend.app.core.database import get_db
 from backend.app.models.recovery_case import RecoveryCase
 from backend.app.models.transaction import Transaction
 from backend.app.services.recovery_service import RecoveryService
-from backend.app.core.security import generate_correlation_id
+from backend.app.core.security import generate_correlation_id, require_role
 
 router = APIRouter(prefix="", tags=["Human Approvals"])
 
@@ -59,17 +59,19 @@ async def get_pending_approvals(db: AsyncSession = Depends(get_db)):
 @router.post("/recovery-cases/{case_id}/approve")
 async def approve_recovery_case(
     case_id: str,
-    x_user_role: str = Header("MERCHANT_ADMIN"),
+    x_user_role: str = Header(None),
     x_user_id: str = Header("ops_lead_1"),
     x_correlation_id: Optional[str] = Header(None),
     db: AsyncSession = Depends(get_db),
+    _role: str = Depends(require_role(["MERCHANT_ADMIN", "ADMIN"])),
 ):
     """Approve a pending high-value or escalated recovery action."""
+    effective_role = x_user_role or _role
     corr_id = x_correlation_id or generate_correlation_id()
     action_record = await RecoveryService.approve_case(
         db=db,
         case_id=case_id,
-        user_role=x_user_role,
+        user_role=effective_role,
         user_id=x_user_id,
         correlation_id=corr_id,
     )
@@ -86,18 +88,20 @@ async def approve_recovery_case(
 async def reject_recovery_case(
     case_id: str,
     reason: str = Body("Rejected by merchant operator", embed=True),
-    x_user_role: str = Header("MERCHANT_ADMIN"),
+    x_user_role: str = Header(None),
     x_user_id: str = Header("ops_lead_1"),
     x_correlation_id: Optional[str] = Header(None),
     db: AsyncSession = Depends(get_db),
+    _role: str = Depends(require_role(["MERCHANT_ADMIN", "ADMIN"])),
 ):
     """Reject and safely terminate a pending recovery case."""
+    effective_role = x_user_role or _role
     corr_id = x_correlation_id or generate_correlation_id()
     stopped_case = await RecoveryService.reject_case(
         db=db,
         case_id=case_id,
         reason=reason,
-        user_role=x_user_role,
+        user_role=effective_role,
         user_id=x_user_id,
         correlation_id=corr_id,
     )
