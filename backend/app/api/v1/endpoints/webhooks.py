@@ -59,27 +59,26 @@ async def handle_razorpay_webhook(
     # 1. Signature Verification
     # ---------------------------------------------------------
 
-    if x_razorpay_signature:
-        try:
-            verify_razorpay_webhook_signature(
-                raw_body=raw_body,
-                signature=x_razorpay_signature,
-            )
+    try:
+        verify_razorpay_webhook_signature(
+            raw_body=raw_body,
+            signature=x_razorpay_signature,
+        )
 
-        except Exception as e:
-            logger.warning(
-                f"Webhook signature validation rejected: {e}"
-            )
+    except Exception as e:
+        logger.warning(
+            f"Webhook signature validation rejected: {e}"
+        )
 
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    "error": {
-                        "code": "INVALID_WEBHOOK_SIGNATURE",
-                        "message": str(e),
-                    }
-                },
-            )
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "error": {
+                    "code": "INVALID_WEBHOOK_SIGNATURE",
+                    "message": str(e),
+                }
+            },
+        )
 
     # ---------------------------------------------------------
     # 2. Extract Event ID
