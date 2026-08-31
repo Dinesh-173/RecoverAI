@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text, UniqueConstraint, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 import uuid
@@ -72,6 +72,13 @@ class RecoveryAction(Base):
     )
 
     error_code = Column(String(100), nullable=True)
+
+    is_simulation = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        index=True,
+    )
 
     created_at = Column(
         DateTime(timezone=True),

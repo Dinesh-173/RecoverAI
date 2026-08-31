@@ -22,6 +22,7 @@ class RecoveryCase(Base):
     requires_human_approval = Column(Boolean, nullable=False, default=False, index=True)
     approval_reason = Column(String(255), nullable=True)
     assigned_to = Column(String(100), nullable=True)
+    is_simulation = Column(Boolean, nullable=False, default=False, index=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

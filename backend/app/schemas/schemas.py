@@ -52,6 +52,8 @@ class TransactionBase(BaseModel):
     currency: str = "INR"
     payment_method: str = "UPI"
     status: str
+    initial_status: Optional[str] = None
+    is_simulation: bool = False
     failure_reason: Optional[str] = None
     failure_code: Optional[str] = None
     attempt_number: int = 1
@@ -154,6 +156,7 @@ class DashboardMetrics(BaseModel):
     revenue_at_risk: float
     recovered_revenue: float
     expected_recoverable_revenue: float
+    expected_recoverable_revenue_open: Optional[float] = None
     recovery_rate: float
     open_cases: int
     pending_approvals: int

@@ -12,5 +12,5 @@ def test_alembic_revision_chain_is_linear():
     assert revisions, "expected at least one Alembic revision"
     heads = script.get_heads()
     assert len(heads) == 1
-    assert heads[0] == "001_initial"
+    assert heads[0] == "002_simulation_isolation"
     assert script.get_revision("001_initial").down_revision is None

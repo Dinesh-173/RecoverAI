@@ -68,6 +68,7 @@ class RecoveryService:
             "merchant_category": merchant.business_category if merchant else "ECOMMERCE",
             "subscription_id": tx.subscription_id,
             "metadata_json": tx.metadata_json or {},
+            "is_simulation": tx.is_simulation or force_simulation,
         }
         cust_data = {
             "id": customer.id,
@@ -131,6 +132,7 @@ class RecoveryService:
                 transaction_id=tx.id,
                 status="OPEN",
                 risk_level="HIGH" if assessment.risk_score > 60 else ("MEDIUM" if assessment.risk_score > 30 else "LOW"),
+                is_simulation=tx.is_simulation,
             )
             db.add(rec_case)
 
@@ -232,6 +234,7 @@ class RecoveryService:
             reason=rec_case.diagnosis,
             policy_decision="APPROVED",
             policy_version="v1.2.0",
+            is_simulation=tx.is_simulation or rec_case.is_simulation,
         )
         db.add(action_record)
         await db.commit()

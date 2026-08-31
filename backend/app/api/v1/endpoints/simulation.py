@@ -84,6 +84,8 @@ async def run_recovery_simulation(
             currency="INR",
             payment_method="NETBANKING",
             status="FAILED",
+            initial_status="FAILED",
+            is_simulation=True,
             failure_code="GATEWAY_ERROR",
             failure_reason="HDFC netbanking gateway timeout",
             attempt_number=1,
@@ -111,6 +113,8 @@ async def run_recovery_simulation(
             currency="INR",
             payment_method="UPI",
             status="FAILED",
+            initial_status="FAILED",
+            is_simulation=True,
             failure_code="NETWORK_TIMEOUT",
             failure_reason="UPI NPCI connection timeout",
             attempt_number=1,
@@ -138,6 +142,8 @@ async def run_recovery_simulation(
             currency="INR",
             payment_method="CARD",
             status="FAILED",
+            initial_status="FAILED",
+            is_simulation=True,
             failure_code="INSUFFICIENT_FUNDS",
             failure_reason="Card declined by issuer due to insufficient balance",
             attempt_number=3, # Exceeds max retries
@@ -165,6 +171,8 @@ async def run_recovery_simulation(
             currency="INR",
             payment_method="UPI",
             status="FAILED",
+            initial_status="FAILED",
+            is_simulation=True,
             failure_code="USER_DROPPED",
             failure_reason="Payment authorization abandoned",
             attempt_number=1,
@@ -192,6 +200,8 @@ async def run_recovery_simulation(
             currency="INR",
             payment_method="CARD",
             status="FAILED",
+            initial_status="FAILED",
+            is_simulation=True,
             failure_code="FRAUD_SECURITY_BLOCK",
             failure_reason="Issuer risk block: High velocity fraud score",
             attempt_number=1,
@@ -205,7 +215,7 @@ async def run_recovery_simulation(
 
     else:
         # Load up to batch_size unprocessed failed transactions
-        stmt_failed = select(Transaction).where(Transaction.status == "FAILED").limit(request.batch_size)
+        stmt_failed = select(Transaction).where(Transaction.status == "FAILED", Transaction.is_simulation == False).limit(request.batch_size)
         res_failed = await db.execute(stmt_failed)
         scenario_txs = list(res_failed.scalars().all())
 
@@ -219,7 +229,7 @@ async def run_recovery_simulation(
     cases_summary = []
 
     for tx in scenario_txs:
-        revenue_at_risk += tx.amount
+        revenue_at_risk += float(tx.amount)
         corr_id = f"{batch_id}_{tx.id[:8]}"
 
         # Analyze
@@ -245,14 +255,15 @@ async def run_recovery_simulation(
                 correlation_id=corr_id,
                 force_simulation=True,
             )
-            revenue_recovered += tx.amount
-            recovered_count += 1
             action_status = action_record.status
+            if action_status == "SUCCESS":
+                revenue_recovered += float(tx.amount)
+                recovered_count += 1
 
         cases_summary.append({
             "case_id": case.id,
             "transaction_id": tx.id,
-            "amount": tx.amount,
+            "amount": float(tx.amount),
             "failure_code": tx.failure_code,
             "diagnosis": case.diagnosis,
             "recommended_action": case.recommended_action,

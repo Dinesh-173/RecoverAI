@@ -23,6 +23,8 @@ class TransactionService:
             currency=data.currency,
             payment_method=data.payment_method,
             status=data.status,
+            initial_status=data.initial_status or data.status,
+            is_simulation=data.is_simulation,
             failure_reason=data.failure_reason,
             failure_code=data.failure_code,
             attempt_number=data.attempt_number,
