@@ -8,6 +8,7 @@ from backend.app.api.v1.endpoints import (
     simulation,
     evaluation,
     webhooks,
+    assistant,
 )
 
 api_router = APIRouter()
@@ -20,3 +21,4 @@ api_router.include_router(audit_logs.router)
 api_router.include_router(simulation.router)
 api_router.include_router(evaluation.router)
 api_router.include_router(webhooks.router)
+api_router.include_router(assistant.router)

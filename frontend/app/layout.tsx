@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { IntelligenceAssistantPanel } from "@/components/assistant/IntelligenceAssistantPanel";
 
 export const metadata: Metadata = {
   title: "RecoverAI — Autonomous AI Revenue Recovery Agent",
@@ -21,6 +22,7 @@ export default function RootLayout({
           <AppHeader />
           <main className="flex-1 overflow-y-auto p-8">{children}</main>
         </div>
+        <IntelligenceAssistantPanel />
       </body>
     </html>
   );

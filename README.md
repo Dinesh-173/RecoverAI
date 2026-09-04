@@ -43,7 +43,7 @@ flowchart TD
         ML_Model["ML Recoverability Model (Gradient Boosting)"]
         AI_Agent["AI Diagnostic Agent (LLMProvider Abstraction)"]
         Fallback["Deterministic Rule Fallback Engine"]
-        
+
         TX_Service --> ML_Model
         ML_Model -->|Probability & Recovery Score| AI_Agent
         AI_Agent -->|Timeout / Malformed JSON| Fallback
@@ -53,7 +53,7 @@ flowchart TD
         Policy["Deterministic Policy Engine"]
         AI_Agent -->|Structured Proposal (JSON)| Policy
         Fallback -->|Deterministic Proposal| Policy
-        
+
         Policy --> RuleCheck{"Policy Rules & Limits Check"}
         RuleCheck -- Exceeds High Value / Low Confidence --> WAITING["WAITING_APPROVAL (Human Review)"]
         RuleCheck -- Opt-out / Max Retries / Low Score --> STOP["STOP_RECOVERY (Halt Action)"]
@@ -70,7 +70,7 @@ flowchart TD
     subgraph Execution["5. Bounded Action Execution"]
         Exec["Action Executor"]
         APPROVED --> Exec
-        
+
         AdapterChoice{"Mode"}
         Exec --> AdapterChoice
         AdapterChoice -- Test Mode Active --> RP_Test["Razorpay Test Adapter (rzp_test_*)"]
@@ -139,37 +139,51 @@ python -m evaluation.generate_report
 # Seed deterministic database (SEED=42)
 python -m scripts.seed_data
 
-# Start FastAPI backend server (Port 8000)
-uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+### Windows One-Click Quickstart
+```powershell
+# Run the all-in-one startup script in PowerShell
+.\start-recoverai.ps1
 ```
 
-### 3. Frontend Setup
+### Manual Service Launch (Windows / Linux / macOS)
 ```bash
+# Start FastAPI backend server (Port 8000) using Python module execution to avoid Windows PATH issues
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+
+# Start Next.js frontend server (Port 3000)
 cd frontend
-npm install
 npm run dev
 ```
+
 Open **`http://localhost:3000`** in your browser.
 
 ---
 
-## 6. Running Tests & Quality Gate
+## 6. Predefined & Custom Simulation Scenarios
 
-```bash
-# Run complete test suite (Unit, Policy, Fallback, Security, Integration)
-python -m pytest backend/tests -v
-```
+The dashboard includes an **Autonomous Recovery Simulation Runner** (`/simulation`) with full support for:
+1. **5 Canonical Demo Scenarios**:
+   - **Scenario 1 (High-Value VIP)**: A ₹45,000 transaction with temporary failure $\rightarrow$ Escalated to Human Approval Queue (`WAITING_APPROVAL`).
+   - **Scenario 2 (Transient Timeout)**: A ₹1,499 UPI failure with bank downtime $\rightarrow$ Scheduled for delayed retry (`SCHEDULED`).
+   - **Scenario 3 (Repeated Failure)**: Attempt 3 failure $\rightarrow$ Stopped by Policy Engine to prevent fatigue (`STOPPED_BY_POLICY`).
+   - **Scenario 4 (Privacy Opt-Out)**: Customer opted out $\rightarrow$ Notification blocked by Policy Engine (`STOPPED_BY_POLICY`).
+   - **Scenario 5 (Security / Fraud Block)**: Issuer fraud block $\rightarrow$ Halted immediately with 0 retries (`STOPPED_BY_POLICY`).
+2. **Custom CSV File Upload**: Upload custom datasets using the provided CSV template with full validation.
+3. **Manual Form Entry**: Add, preview, and test custom failed transactions interactively.
+4. **Historical Date Preservation & Range Filtering**: Historical transaction timestamps are preserved (`is_simulation=True`) with inclusive boundary filtering (`Start Date` / `End Date`).
+5. **Simulation Reset Endpoint**: Execute `POST /api/v1/simulation/reset` to safely purge simulation records while preserving live production data.
 
 ---
 
-## 7. Predefined Simulation Scenarios (1-Click Demo)
+## 7. Running Tests & Quality Gate
 
-The dashboard includes a dedicated **Recovery Simulation Runner** (`/simulation`) featuring 5 canonical scenarios:
-1. **Scenario 1 (High-Value VIP)**: A ₹45,000 transaction with temporary failure $\rightarrow$ Escalated to Human Approval Queue.
-2. **Scenario 2 (Transient Timeout)**: A ₹1,499 UPI failure with bank downtime $\rightarrow$ Scheduled for 45-minute delayed retry.
-3. **Scenario 3 (Repeated Failure)**: Attempt 3 failure $\rightarrow$ Stopped by policy engine to prevent fatigue.
-4. **Scenario 4 (Privacy Opt-Out)**: Customer opted out of communication $\rightarrow$ Notification blocked by policy.
-5. **Scenario 5 (Security / Fraud Block)**: Issuer fraud block $\rightarrow$ Halted immediately with zero retry.
+```bash
+# Run complete test suite (Unit, Policy, Fallback, Security, Integration)
+python -m pytest -v
+
+# Run targeted Phase 16 custom data & date simulation tests
+python -m pytest backend/tests/unit/test_phase16_custom_data_date_simulation.py -v
+```
 
 ---
 
@@ -190,3 +204,16 @@ The dashboard includes a dedicated **Recovery Simulation Runner** (`/simulation`
 - [Architecture Decision Records (ADRs)](docs/decisions.md)
 - [5-Minute Pitch Script](docs/pitch.md)
 - [Technical Interview Preparation](docs/interview.md)
+- [RecoverAI Intelligence Assistant Audit](docs/RECOVERAI_INTELLIGENCE_ASSISTANT_AUDIT.md)
+
+---
+
+## 10. RecoverAI Intelligence Assistant
+
+RecoverAI includes an embedded, context-aware, tool-governed **Intelligence Assistant**:
+
+- **Floating UI Copilot**: Accessible via the `🤖 RecoverAI AI` button on any screen.
+- **Page Context Aware**: Automatically adapts explanations to the active screen (`/dashboard`, `/transactions`, `/recovery-cases/[id]`, `/simulation`, `/analytics`, `/approvals`, `/audit-logs`).
+- **Controlled Tool Registry**: Reads live metrics, ML evaluation benchmarks (**ROC-AUC 0.8332**), Policy Engine rationales, and system health status.
+- **FinTech Safety Invariant**: AI is strictly advisory and read-only; the Policy Engine and permission system retain sole authoritative control over financial payment actions.
+- **Prompt Injection Defense**: Treats external customer metadata as untrusted data (`<untrusted_metadata>`), blocking instruction bypass attempts.
