@@ -334,3 +334,56 @@ async def test_assistant_anti_hallucination_speculative_query(client: AsyncClien
     data = res.json()
     assert "Data Boundary Notice" in data["message"] or "speculative" in data["message"].lower()
     assert any(t["tool_name"] == "data_boundary_verifier" for t in data["tools_used"])
+
+
+@pytest.mark.asyncio
+async def test_assistant_general_conversation_greeting(client: AsyncClient):
+    payload = {
+        "message": "Hello! Who are you?",
+        "page_context": "dashboard",
+    }
+    res = await client.post(
+        "/api/v1/assistant/chat",
+        json=payload,
+        headers={"X-User-Role": "MERCHANT_ADMIN"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert "RecoverAI Intelligence Assistant" in data["message"]
+    # Verify dashboard metric tools were NOT invoked for a greeting
+    assert not any(t["tool_name"] == "get_dashboard_metrics" for t in data["tools_used"])
+
+
+@pytest.mark.asyncio
+async def test_assistant_math_calculation(client: AsyncClient):
+    payload = {
+        "message": "What is 2 + 2?",
+        "page_context": "dashboard",
+    }
+    res = await client.post(
+        "/api/v1/assistant/chat",
+        json=payload,
+        headers={"X-User-Role": "MERCHANT_ADMIN"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert "4" in data["message"]
+    assert any(t["tool_name"] == "math_calculator" for t in data["tools_used"])
+    assert not any(t["tool_name"] == "get_dashboard_metrics" for t in data["tools_used"])
+
+
+@pytest.mark.asyncio
+async def test_assistant_general_ml_concepts(client: AsyncClient):
+    payload = {
+        "message": "What is the difference between precision and recall?",
+        "page_context": "dashboard",
+    }
+    res = await client.post(
+        "/api/v1/assistant/chat",
+        json=payload,
+        headers={"X-User-Role": "MERCHANT_ADMIN"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert "Precision" in data["message"] and "Recall" in data["message"]
+    assert any(t["tool_name"] == "general_ml_knowledge" for t in data["tools_used"])
