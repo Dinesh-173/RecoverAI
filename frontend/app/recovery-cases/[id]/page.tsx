@@ -20,6 +20,8 @@ import {
   HelpCircle,
   Info,
   Lock,
+  X,
+  Zap,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { RecoveryCaseDetail } from "@/lib/types";
@@ -41,7 +43,7 @@ export default function CaseDetailPage() {
       const data = await api.getRecoveryCaseById(id as string);
       setCaseData(data);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch recovery case:", err);
     } finally {
       setLoading(false);
     }
@@ -79,18 +81,25 @@ export default function CaseDetailPage() {
 
   if (loading && !caseData) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
+        <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+        <p className="text-xs text-muted">Retrieving case telemetry & policy evaluations...</p>
       </div>
     );
   }
 
   if (!caseData || (caseData as any).error) {
     return (
-      <div className="p-8 text-center text-muted">
-        <p>Recovery case not found.</p>
-        <Link href="/recovery-cases" className="text-blue-400 text-sm mt-2 inline-block">
-          &larr; Back to Pipeline
+      <div className="max-w-xl mx-auto mt-12 p-8 text-center fintech-card space-y-4">
+        <AlertCircle className="w-10 h-10 text-amber-400 mx-auto" />
+        <h2 className="text-lg font-bold text-white">Recovery Case Not Found</h2>
+        <p className="text-xs text-muted">The specified case ID does not exist in the active merchant database.</p>
+        <Link
+          href="/recovery-cases"
+          className="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl inline-flex items-center gap-2 transition"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Back to Pipeline
         </Link>
       </div>
     );
@@ -105,67 +114,68 @@ export default function CaseDetailPage() {
       <div>
         <Link
           href="/recovery-cases"
-          className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-white transition mb-3"
+          className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-white transition mb-3 group"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
           <span>Back to Recovery Pipeline</span>
         </Link>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-border/40">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-white tracking-tight">Case {caseData.id}</h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold text-white tracking-tight font-mono">Case {caseData.id}</h1>
               <StatusBadge status={caseData.status} />
               <StatusBadge status={caseData.risk_level} />
             </div>
             <p className="text-xs text-muted mt-1 font-mono">
-              Transaction Ref: {tx?.id} | Razorpay ID: {tx?.external_transaction_id || "N/A"}
+              Transaction Ref: <span className="text-slate-300">{tx?.id}</span> | Razorpay ID:{" "}
+              <span className="text-slate-300">{tx?.external_transaction_id || "N/A"}</span>
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setShowExplainModal(true)}
-              className="px-3.5 py-2 rounded-lg bg-blue-950/40 hover:bg-blue-900/40 border border-blue-800/60 text-blue-300 text-sm font-semibold flex items-center gap-2 transition"
+              className="px-3.5 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary-light text-xs font-semibold flex items-center gap-2 transition duration-150 active:scale-[0.98] focus-ring"
             >
-              <HelpCircle className="w-4 h-4 text-blue-400" />
+              <HelpCircle className="w-4 h-4 text-primary" />
               <span>Why Did RecoverAI Do This?</span>
             </button>
 
             <button
               disabled={actionLoading}
               onClick={handleAnalyze}
-              className="px-3.5 py-2 rounded-lg bg-surface hover:bg-surfaceHover border border-border text-slate-200 text-sm font-medium flex items-center gap-2 transition disabled:opacity-50"
+              className="px-3.5 py-2 rounded-xl bg-surfaceSubtle hover:bg-surfaceHover border border-borderSubtle text-slate-200 text-xs font-medium flex items-center gap-2 transition duration-150 disabled:opacity-50 active:scale-[0.98] focus-ring"
             >
-              <Sparkles className="w-4 h-4 text-blue-400" />
-              Re-Analyze Case
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span>Re-Analyze Case</span>
             </button>
 
             {caseData.status !== "RECOVERED" && caseData.status !== "STOPPED" && !caseData.requires_human_approval && (
               <button
                 disabled={actionLoading}
                 onClick={handleExecute}
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium flex items-center gap-2 shadow-lg shadow-blue-500/20 transition disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-medium flex items-center gap-2 shadow-md shadow-primary/20 transition duration-150 disabled:opacity-50 active:scale-[0.98] focus-ring"
               >
-                <Play className="w-4 h-4 fill-white" />
-                Execute Action
+                <Play className="w-3.5 h-3.5 fill-white" />
+                <span>Execute Action</span>
               </button>
             )}
 
             {caseData.requires_human_approval && (
               <Link
                 href="/approvals"
-                className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium flex items-center gap-2 shadow-lg shadow-amber-500/20 transition"
+                className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium flex items-center gap-2 shadow-md shadow-amber-500/20 transition duration-150 active:scale-[0.98] focus-ring"
               >
                 <ShieldAlert className="w-4 h-4" />
-                Review Approval Queue
+                <span>Review Approval Queue</span>
               </Link>
             )}
           </div>
         </div>
 
         {msg && (
-          <div className="mt-4 p-3 rounded-lg bg-blue-950/40 border border-blue-800/40 text-blue-300 text-xs flex items-center justify-between">
+          <div className="mt-4 p-3 rounded-xl bg-primary/10 border border-primary/30 text-primary-light text-xs flex items-center justify-between">
             <span>{msg}</span>
             <button onClick={() => setMsg(null)} className="text-muted hover:text-white">&times;</button>
           </div>
@@ -173,36 +183,36 @@ export default function CaseDetailPage() {
       </div>
 
       {/* Autonomous Decision Pipeline Flow */}
-      <div className="p-6 rounded-xl border border-border bg-surface space-y-4">
+      <div className="fintech-card p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-blue-400" />
+            <Sparkles className="w-5 h-5 text-primary" />
             <h2 className="text-base font-bold text-white">Autonomous Decision Pipeline</h2>
           </div>
           <span className="text-xs text-muted font-mono">Architecture: AI Advisory + Policy Authoritative</span>
         </div>
 
-        <div className="p-4 rounded-lg bg-background/60 border border-border">
+        <div className="p-4 rounded-xl bg-slate-950/60 border border-borderSubtle">
           <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-center text-xs">
-            <div className="p-3 rounded-lg bg-surface border border-border flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-surfaceSubtle/60 border border-borderSubtle flex flex-col justify-between">
               <span className="text-[10px] uppercase text-muted font-semibold">1. Transaction</span>
-              <span className="font-bold text-white text-sm mt-1">{formatCurrency(tx?.amount || 0)}</span>
-              <span className="text-[10px] text-rose-400 mt-1">{tx?.failure_code}</span>
+              <span className="font-bold text-white text-sm mt-1 tabular-nums">{formatCurrency(tx?.amount || 0)}</span>
+              <span className="text-[10px] font-mono text-rose-400 mt-1 truncate">{tx?.failure_code}</span>
             </div>
 
-            <div className="p-3 rounded-lg bg-surface border border-border flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-surfaceSubtle/60 border border-borderSubtle flex flex-col justify-between">
               <span className="text-[10px] uppercase text-muted font-semibold">2. ML Assessment</span>
-              <span className="font-bold text-blue-400 text-sm mt-1">{caseData.recovery_score.toFixed(1)}/100</span>
+              <span className="font-bold text-primary-light text-sm mt-1 font-mono">{caseData.recovery_score.toFixed(1)}/100</span>
               <span className="text-[10px] text-muted mt-1">{caseData.risk_level} Risk</span>
             </div>
 
-            <div className="p-3 rounded-lg bg-surface border border-blue-900/40 flex flex-col justify-between">
-              <span className="text-[10px] uppercase text-blue-400 font-semibold">3. AI Agent (Advisory)</span>
+            <div className="p-3 rounded-xl bg-surfaceSubtle/60 border border-primary/30 flex flex-col justify-between">
+              <span className="text-[10px] uppercase text-primary-light font-semibold">3. AI Agent (Advisory)</span>
               <span className="font-bold text-white text-xs mt-1 font-mono">{caseData.recommended_action || "NONE"}</span>
-              <span className="text-[10px] text-blue-300 mt-1">{((caseData.confidence || 0) * 100).toFixed(0)}% Conf</span>
+              <span className="text-[10px] text-primary-light mt-1 font-mono">{((caseData.confidence || 0) * 100).toFixed(0)}% Conf</span>
             </div>
 
-            <div className="p-3 rounded-lg bg-surface border border-purple-900/40 flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-surfaceSubtle/60 border border-purple-500/30 flex flex-col justify-between">
               <span className="text-[10px] uppercase text-purple-400 font-semibold">4. Policy Engine</span>
               <span className="font-bold text-purple-300 text-xs mt-1 font-mono">
                 {caseData.requires_human_approval ? "ESCALATE" : "AUTHORIZATION"}
@@ -210,7 +220,7 @@ export default function CaseDetailPage() {
               <span className="text-[10px] text-muted mt-1">Rule Bound Check</span>
             </div>
 
-            <div className="p-3 rounded-lg bg-emerald-950/30 border border-emerald-800/40 flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-800/40 flex flex-col justify-between">
               <span className="text-[10px] uppercase text-emerald-400 font-semibold">5. Final Decision</span>
               <span className="font-bold text-emerald-400 text-xs mt-1 font-mono">{caseData.status}</span>
               <span className="text-[10px] text-emerald-300 mt-1">Safe Execution</span>
@@ -218,11 +228,11 @@ export default function CaseDetailPage() {
           </div>
         </div>
 
-        <div className="p-3 rounded-lg bg-blue-950/20 border border-blue-800/30 text-xs text-blue-300 flex items-center justify-between font-mono">
+        <div className="p-3 rounded-xl bg-primary/[0.04] border border-primary/20 text-xs text-primary-light flex items-center justify-between font-mono">
           <span>AI proposed the action. Policy Engine made the final decision.</span>
           <button
             onClick={() => setShowExplainModal(true)}
-            className="text-blue-400 underline hover:text-white"
+            className="text-primary hover:text-primary-light underline"
           >
             Explain Decision Rationale
           </button>
@@ -234,15 +244,15 @@ export default function CaseDetailPage() {
         {/* Left Column: Transaction & Customer Context */}
         <div className="space-y-6">
           {/* Transaction Summary */}
-          <div className="p-5 rounded-xl border border-border bg-surface">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-blue-400" />
+          <div className="fintech-card p-5">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-primary" />
               Transaction Context
             </h2>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted">Amount</span>
-                <span className="font-bold text-white text-base">
+                <span className="font-bold text-white text-base tabular-nums">
                   {formatCurrency(tx?.amount || 0, tx?.currency)}
                 </span>
               </div>
@@ -252,7 +262,7 @@ export default function CaseDetailPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Failure Code</span>
-                <span className="font-mono text-xs text-rose-400 bg-rose-950/40 px-2 py-0.5 rounded border border-rose-900/40">
+                <span className="font-mono text-xs text-rose-400 bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-900/40">
                   {tx?.failure_code || "UNKNOWN"}
                 </span>
               </div>
@@ -260,7 +270,7 @@ export default function CaseDetailPage() {
                 <span className="text-muted">Attempt Count</span>
                 <span className="text-slate-200 font-mono">Attempt {tx?.attempt_number} of 2</span>
               </div>
-              <div className="pt-2 border-t border-border/60 text-xs text-slate-400">
+              <div className="pt-2 border-t border-borderSubtle text-xs text-slate-400">
                 <span className="font-semibold text-slate-300">Failure Reason: </span>
                 {tx?.failure_reason}
               </div>
@@ -268,15 +278,15 @@ export default function CaseDetailPage() {
           </div>
 
           {/* Customer Profile */}
-          <div className="p-5 rounded-xl border border-border bg-surface">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2">
+          <div className="fintech-card p-5">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2">
               <User className="w-4 h-4 text-purple-400" />
               Customer Profile
             </h2>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted">Name</span>
-                <span className="font-semibold text-white">{cust?.name}</span>
+                <span className="font-semibold text-white">{cust?.name || "N/A"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Segment</span>
@@ -284,7 +294,7 @@ export default function CaseDetailPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Lifetime Value (LTV)</span>
-                <span className="font-mono text-slate-200">{formatCurrency(cust?.total_lifetime_value || 0)}</span>
+                <span className="font-mono text-slate-200 tabular-nums">{formatCurrency(cust?.total_lifetime_value || 0)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Past Success / Fail</span>
@@ -306,38 +316,38 @@ export default function CaseDetailPage() {
         {/* Right Column: AI Diagnostics & Policy Enforcement */}
         <div className="lg:col-span-2 space-y-6">
           {/* AI Diagnostic Reasoning Card */}
-          <div className="p-6 rounded-xl border border-blue-800/40 bg-blue-950/20">
+          <div className="fintech-card p-6 border-primary/30 bg-primary/[0.02]">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-blue-400" />
+                <Sparkles className="w-5 h-5 text-primary" />
                 <h2 className="text-base font-bold text-white">AI Diagnostic Synthesis</h2>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted font-mono">Confidence</span>
-                <span className="text-xs font-bold text-blue-400 font-mono px-2 py-0.5 rounded bg-blue-900/40 border border-blue-700/40">
+                <span className="text-xs font-bold text-primary-light font-mono px-2 py-0.5 rounded-md bg-primary/10 border border-primary/25">
                   {((caseData.confidence || 0) * 100).toFixed(0)}%
                 </span>
               </div>
             </div>
 
-            <p className="text-sm text-slate-200 leading-relaxed bg-background/50 p-4 rounded-lg border border-border">
+            <p className="text-sm text-slate-200 leading-relaxed bg-slate-950/60 p-4 rounded-xl border border-borderSubtle">
               {caseData.diagnosis || "No diagnosis generated yet."}
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4 text-xs">
-              <div className="p-3 rounded-lg bg-surface border border-border">
+              <div className="p-3 rounded-xl bg-surfaceSubtle border border-borderSubtle">
                 <span className="text-muted block mb-1">Recommended Strategy</span>
                 <span className="font-mono font-bold text-white text-sm">
                   {caseData.recommended_action || "NONE"}
                 </span>
               </div>
-              <div className="p-3 rounded-lg bg-surface border border-border">
+              <div className="p-3 rounded-xl bg-surfaceSubtle border border-borderSubtle">
                 <span className="text-muted block mb-1">Suggested Delay</span>
                 <span className="font-mono font-bold text-white text-sm">
                   {caseData.recommended_delay_minutes} min
                 </span>
               </div>
-              <div className="p-3 rounded-lg bg-surface border border-border">
+              <div className="p-3 rounded-xl bg-surfaceSubtle border border-borderSubtle">
                 <span className="text-muted block mb-1">Recovery Score</span>
                 <span className="font-mono font-bold text-emerald-400 text-sm">
                   {caseData.recovery_score.toFixed(1)} / 100
@@ -347,14 +357,14 @@ export default function CaseDetailPage() {
           </div>
 
           {/* Policy Guardrails Checks */}
-          <div className="p-6 rounded-xl border border-border bg-surface">
+          <div className="fintech-card p-6">
             <h2 className="text-base font-bold text-white mb-3 flex items-center gap-2">
               <Shield className="w-4 h-4 text-emerald-400" />
               Deterministic Policy Engine Guardrails
             </h2>
 
             <div className="space-y-2.5">
-              <div className="p-3 rounded-lg bg-background/50 border border-border flex items-center justify-between text-xs">
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-borderSubtle flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span className="text-slate-200">Customer Opt-Out Compliance</span>
@@ -362,7 +372,7 @@ export default function CaseDetailPage() {
                 <span className="font-mono text-emerald-400">PASSED</span>
               </div>
 
-              <div className="p-3 rounded-lg bg-background/50 border border-border flex items-center justify-between text-xs">
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-borderSubtle flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span className="text-slate-200">Max Retry Bound Check (Limit: 2)</span>
@@ -370,7 +380,7 @@ export default function CaseDetailPage() {
                 <span className="font-mono text-emerald-400">PASSED</span>
               </div>
 
-              <div className="p-3 rounded-lg bg-background/50 border border-border flex items-center justify-between text-xs">
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-borderSubtle flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   {caseData.requires_human_approval ? (
                     <AlertCircle className="w-4 h-4 text-amber-400" />
@@ -379,7 +389,7 @@ export default function CaseDetailPage() {
                   )}
                   <span className="text-slate-200">High-Value Threshold (&gt; ₹10,000)</span>
                 </div>
-                <span className={caseData.requires_human_approval ? "font-mono text-amber-400" : "font-mono text-emerald-400"}>
+                <span className={caseData.requires_human_approval ? "font-mono text-amber-400 font-semibold" : "font-mono text-emerald-400"}>
                   {caseData.requires_human_approval ? "ESCALATED FOR APPROVAL" : "PASSED"}
                 </span>
               </div>
@@ -387,7 +397,7 @@ export default function CaseDetailPage() {
           </div>
 
           {/* Action Execution History */}
-          <div className="p-6 rounded-xl border border-border bg-surface">
+          <div className="fintech-card p-6">
             <h2 className="text-base font-bold text-white mb-4">Execution History</h2>
             {caseData.actions.length === 0 ? (
               <p className="text-xs text-muted">No recovery actions executed yet.</p>
@@ -396,7 +406,7 @@ export default function CaseDetailPage() {
                 {caseData.actions.map((act) => (
                   <div
                     key={act.id}
-                    className="p-4 rounded-lg border border-border bg-background/60 text-xs space-y-2"
+                    className="p-4 rounded-xl border border-borderSubtle bg-slate-950/60 text-xs space-y-2"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -407,11 +417,11 @@ export default function CaseDetailPage() {
                     </div>
 
                     <div className="text-slate-300">
-                      Amount Recovered: <span className="font-bold text-white">{formatCurrency(act.amount)}</span>
+                      Amount Recovered: <span className="font-bold text-white tabular-nums">{formatCurrency(act.amount)}</span>
                     </div>
 
                     {act.result && (
-                      <div className="mt-2 p-2.5 rounded bg-surface border border-border/80 text-[11px] font-mono text-slate-300 overflow-x-auto">
+                      <div className="mt-2 p-2.5 rounded-lg bg-surfaceSubtle border border-borderSubtle text-[11px] font-mono text-slate-300 overflow-x-auto">
                         <pre>{JSON.stringify(act.result, null, 2)}</pre>
                       </div>
                     )}
@@ -423,32 +433,32 @@ export default function CaseDetailPage() {
         </div>
       </div>
 
-      {/* "Why Did RecoverAI Do This?" Explainability Modal */}
+      {/* Explainability Modal */}
       {showExplainModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-surface border border-border rounded-xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-border pb-3">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-slide-up ring-1 ring-white/10">
+            <div className="flex items-center justify-between border-b border-borderSubtle pb-3">
               <div className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-blue-400" />
+                <HelpCircle className="w-5 h-5 text-primary" />
                 <h3 className="text-base font-bold text-white">Why Did RecoverAI Do This?</h3>
               </div>
               <button
                 onClick={() => setShowExplainModal(false)}
-                className="text-muted hover:text-white text-lg font-bold"
+                className="text-muted hover:text-white rounded-lg p-1 transition duration-150 focus-ring"
               >
-                &times;
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-4 text-xs">
-              <div className="p-3.5 rounded-lg bg-blue-950/30 border border-blue-800/40 space-y-1.5">
-                <span className="font-bold text-blue-300 text-sm block">1. AI Advisory Recommendation</span>
+              <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/25 space-y-1.5">
+                <span className="font-bold text-primary-light text-sm block">1. AI Advisory Recommendation</span>
                 <p className="text-slate-200">
-                  The LLM Diagnostic Agent recommended <span className="font-mono font-bold text-white">{caseData.recommended_action}</span> with a confidence score of <span className="font-mono text-blue-400">{((caseData.confidence || 0) * 100).toFixed(0)}%</span> based on historical success rates for {tx?.payment_method} failures ({tx?.failure_code}).
+                  The LLM Diagnostic Agent recommended <span className="font-mono font-bold text-white">{caseData.recommended_action}</span> with a confidence score of <span className="font-mono text-primary-light font-semibold">{((caseData.confidence || 0) * 100).toFixed(0)}%</span> based on historical success rates for {tx?.payment_method} failures ({tx?.failure_code}).
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-lg bg-purple-950/30 border border-purple-800/40 space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-purple-950/30 border border-purple-800/40 space-y-1.5">
                 <span className="font-bold text-purple-300 text-sm block">2. Policy Engine Evaluation (Authoritative)</span>
                 <p className="text-slate-200">
                   {caseData.requires_human_approval ? (
@@ -467,7 +477,7 @@ export default function CaseDetailPage() {
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-lg bg-emerald-950/30 border border-emerald-800/40 space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-800/40 space-y-1.5">
                 <span className="font-bold text-emerald-300 text-sm block">3. Execution Authority & Isolation</span>
                 <p className="text-slate-200">
                   The final status is <span className="font-mono font-bold text-emerald-400">{caseData.status}</span>. Payment execution is handled by the isolated Payment Adapter under strict idempotency guarantees.
@@ -475,10 +485,10 @@ export default function CaseDetailPage() {
               </div>
             </div>
 
-            <div className="pt-2 border-t border-border flex justify-end">
+            <div className="pt-2 border-t border-borderSubtle flex justify-end">
               <button
                 onClick={() => setShowExplainModal(false)}
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold"
+                className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition duration-150 active:scale-[0.98] focus-ring"
               >
                 Got It
               </button>

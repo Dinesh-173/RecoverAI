@@ -110,52 +110,115 @@ flowchart TD
 
 ---
 
-## 5. Local Setup & Quickstart Guide
+## 5. Setup & Deployment Guide
 
 ### Prerequisites
 - Python 3.10+
 - Node.js 18+ and npm
+- (Optional for Docker) Docker & Docker Compose
 
-### 1. Clone & Configure Environment
+---
+
+### A. Local Development Setup (Zero-Setup SQLite)
+
+#### 1. Configure Environment
+- **Windows (PowerShell)**:
+  ```powershell
+  Copy-Item .env.example .env
+  ```
+- **Linux / macOS (Bash)**:
+  ```bash
+  cp .env.example .env
+  ```
+
+#### 2. Install Dependencies & Seed Sample Data
 ```bash
-git clone https://github.com/Dinesh-173/RecoverAI.git
-cd RecoverAI
-
-# Copy safe default environment configuration
-cp .env.example .env
-```
-
-### 2. Backend Setup & Seed Data
-```bash
-# Install Python backend dependencies
+# Install backend dependencies
 pip install -r backend/requirements.txt
 
-# Run ML training pipeline
-python -m ml.models.train
-
-# Run empirical evaluation benchmarks
-python -m evaluation.generate_report
-
-# Seed deterministic database (SEED=42)
+# Seed sample transactions and recovery cases (SEED=42)
 python -m scripts.seed_data
-
-### Windows One-Click Quickstart
-```powershell
-# Run the all-in-one startup script in PowerShell
-.\start-recoverai.ps1
 ```
 
-### Manual Service Launch (Windows / Linux / macOS)
-```bash
-# Start FastAPI backend server (Port 8000) using Python module execution to avoid Windows PATH issues
-python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+#### 3. Start Development Servers
+- **Option 1: Windows One-Click Quickstart**:
+  ```powershell
+  .\start-recoverai.ps1
+  ```
+- **Option 2: Manual Launch**:
+  ```bash
+  # Terminal 1: Backend API (Port 8000)
+  python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 
-# Start Next.js frontend server (Port 3000)
-cd frontend
-npm run dev
-```
+  # Terminal 2: Next.js Frontend (Port 3000)
+  cd frontend
+  npm run dev
+  ```
 
 Open **`http://localhost:3000`** in your browser.
+
+---
+
+### B. Production Deployment (PostgreSQL + Docker Compose)
+
+The repository provides a fully containerized multi-tier deployment configuration.
+
+#### 1. Production Environment Configuration
+Set the following variables in `.env`:
+```ini
+ENVIRONMENT=production
+PORT=8000
+HOST=0.0.0.0
+
+# Database: Use asyncpg for production PostgreSQL
+DATABASE_URL=postgresql+asyncpg://<pg_user>:<pg_password>@<pg_host>:5432/<pg_db>
+SYNC_DATABASE_URL=postgresql://<pg_user>:<pg_password>@<pg_host>:5432/<pg_db>
+
+# CORS: Set exact merchant dashboard origin(s)
+CORS_ORIGINS=https://app.yourdomain.com
+
+# Razorpay Test Mode Credentials
+RAZORPAY_KEY_ID=rzp_test_<your_key>
+RAZORPAY_KEY_SECRET=<your_secret>
+RAZORPAY_WEBHOOK_SECRET=<your_webhook_secret>
+
+# AI / LLM Provider (mock, gemini, openai)
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=<your_gemini_key>
+LLM_MODEL=gemini-2.0-flash
+
+# Operational Mode (false = active test-mode recovery, true = demo sandbox)
+DEMO_MODE=false
+```
+
+> [!IMPORTANT]
+> **API URL Configuration**: Next.js client bundles inline `NEXT_PUBLIC_*` variables at build time. When deploying frontend and backend on separate domains, supply `NEXT_PUBLIC_API_URL="https://api.yourdomain.com/api/v1"` during `npm run build`. For containerized deployments sharing a reverse proxy (e.g., NGINX, Cloudflare, or Traefik), route `/api/v1` to port 8000 and `/` to port 3000.
+
+#### 2. Launch with Docker Compose
+```bash
+# Build production images
+docker compose build
+
+# Start services in detached mode
+docker compose up -d
+
+# Verify container health
+docker compose ps
+curl -f http://localhost:8000/health
+```
+
+#### 3. Standalone Production Build (Non-Docker)
+```bash
+# Backend (FastAPI + Uvicorn)
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --workers 4
+
+# Frontend (Next.js Production Bundle)
+cd frontend
+export NEXT_PUBLIC_API_URL="https://api.yourdomain.com/api/v1"
+npm ci
+npm run build
+npm run start
+```
 
 ---
 

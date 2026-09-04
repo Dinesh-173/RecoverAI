@@ -17,6 +17,8 @@ import {
   Presentation,
   Copy,
   Check,
+  Zap,
+  CornerDownLeft,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import {
@@ -50,6 +52,7 @@ export function IntelligenceAssistantPanel() {
   const pathname = usePathname();
   const router = useRouter();
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Derive Page Context & Entity ID
   const getContextFromPath = (): { pageContext: string; entityId?: string } => {
@@ -149,6 +152,13 @@ export function IntelligenceAssistantPanel() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   const handleActionClick = (action: SuggestedAction) => {
     if (action.action_type === "NAVIGATE" && action.payload?.route) {
       router.push(action.payload.route);
@@ -180,16 +190,15 @@ export function IntelligenceAssistantPanel() {
           <button
             id="recoverai-assistant-toggle-btn"
             onClick={() => setIsOpen(true)}
-            className="flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium rounded-full shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all transform hover:scale-105 active:scale-95 border border-blue-400/30"
+            className="flex items-center gap-2.5 px-4 py-2.5 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary-hover hover:to-indigo-500 text-white font-medium rounded-full shadow-md shadow-primary/25 hover:shadow-primary/35 transition duration-150 active:scale-[0.98] border border-primary-light/30 backdrop-blur-md focus-ring"
           >
             <div className="relative">
               <Bot className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-400 rounded-full animate-pulse-subtle" />
             </div>
-            <span className="text-sm font-semibold tracking-wide">RecoverAI AI</span>
-            <span className="text-xs bg-blue-700/60 px-2 py-0.5 rounded-full border border-blue-400/30 text-blue-100 font-mono">
-              Copilot
+            <span className="text-sm font-semibold tracking-wide">RecoverAI Copilot</span>
+            <span className="text-[10px] bg-primary-dark/60 px-2 py-0.5 rounded-full border border-primary-light/30 text-indigo-100 font-mono">
+              AI
             </span>
           </button>
         )}
@@ -197,23 +206,23 @@ export function IntelligenceAssistantPanel() {
 
       {/* Floating Chat Drawer Panel */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-full max-w-[500px] h-[680px] max-h-[88vh] bg-slate-950/95 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div className="fixed bottom-6 right-6 z-50 w-full max-w-[520px] h-[700px] max-h-[90vh] bg-slate-950/95 backdrop-blur-2xl border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-slide-up ring-1 ring-white/10">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3.5 bg-slate-900/90 border-b border-slate-800/90">
+          <div className="flex items-center justify-between px-4 py-3.5 bg-slate-900/90 border-b border-borderSubtle">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30 rounded-xl">
-                <Bot className="w-5 h-5 text-blue-400" />
+              <div className="p-2 bg-gradient-to-br from-primary/20 to-indigo-500/20 border border-primary/30 rounded-xl shadow-sm">
+                <Bot className="w-5 h-5 text-primary-light" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-slate-100">RecoverAI Intelligence Assistant</h3>
+                  <h3 className="text-sm font-semibold text-white">RecoverAI Intelligence Assistant</h3>
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
                     ADVISORY
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                  <span>Context: <strong className="text-blue-300 capitalize">{pageContext.replace("_", " ")}</strong></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                  <span>Context: <strong className="text-primary-light capitalize">{pageContext.replace("_", " ")}</strong></span>
                   {entityId && <span className="text-slate-500 font-mono">({entityId.substring(0, 10)})</span>}
                 </div>
               </div>
@@ -223,10 +232,10 @@ export function IntelligenceAssistantPanel() {
               <button
                 onClick={() => setPresentationMode(!presentationMode)}
                 title="Toggle Presentation / Pitch Mode"
-                className={`p-1.5 rounded-lg border text-xs flex items-center gap-1 transition ${
+                className={`p-1.5 rounded-xl border text-xs flex items-center gap-1 transition ${
                   presentationMode
-                    ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                    : "bg-slate-800/50 text-slate-400 border-slate-700 hover:text-slate-200"
+                    ? "bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm"
+                    : "bg-surfaceSubtle text-slate-400 border-borderSubtle hover:text-slate-200"
                 }`}
               >
                 <Presentation className="w-3.5 h-3.5" />
@@ -236,14 +245,14 @@ export function IntelligenceAssistantPanel() {
               <button
                 onClick={clearChat}
                 title="Clear Conversation"
-                className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition"
+                className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-surfaceSubtle rounded-xl transition"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
 
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition"
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-surfaceSubtle rounded-xl transition"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -251,35 +260,35 @@ export function IntelligenceAssistantPanel() {
           </div>
 
           {/* Quick Prompt Chips */}
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-900/60 border-b border-slate-800/50 overflow-x-auto no-scrollbar">
-            <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap pl-1">Prompts:</span>
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-900/60 border-b border-borderSubtle overflow-x-auto no-scrollbar">
+            <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 font-medium whitespace-nowrap pl-1">Prompts:</span>
             <button
               onClick={() => handleSendMessage("Explain our current revenue at risk and recovery metrics")}
-              className="text-xs px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-blue-600/30 text-slate-300 hover:text-blue-200 border border-slate-700/60 transition whitespace-nowrap"
+              className="text-xs px-2.5 py-1 rounded-full bg-slate-900 hover:bg-primary/20 text-slate-300 hover:text-primary-light border border-borderSubtle hover:border-primary/40 transition duration-150 whitespace-nowrap active:scale-[0.98] focus-ring"
             >
               📊 Revenue Analysis
             </button>
             <button
               onClick={() => handleSendMessage("What does ROC-AUC 0.8332 mean for our ML model?")}
-              className="text-xs px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-blue-600/30 text-slate-300 hover:text-blue-200 border border-slate-700/60 transition whitespace-nowrap"
+              className="text-xs px-2.5 py-1 rounded-full bg-slate-900 hover:bg-primary/20 text-slate-300 hover:text-primary-light border border-borderSubtle hover:border-primary/40 transition duration-150 whitespace-nowrap active:scale-[0.98] focus-ring"
             >
               🤖 Explain ML Model
             </button>
             <button
               onClick={() => handleSendMessage("What is the difference between precision and recall?")}
-              className="text-xs px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-blue-600/30 text-slate-300 hover:text-blue-200 border border-slate-700/60 transition whitespace-nowrap"
+              className="text-xs px-2.5 py-1 rounded-full bg-slate-900 hover:bg-primary/20 text-slate-300 hover:text-primary-light border border-borderSubtle hover:border-primary/40 transition duration-150 whitespace-nowrap active:scale-[0.98] focus-ring"
             >
               🎯 Precision vs Recall
             </button>
             <button
               onClick={() => handleSendMessage("Why did Policy Engine escalate or stop transactions?")}
-              className="text-xs px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-blue-600/30 text-slate-300 hover:text-blue-200 border border-slate-700/60 transition whitespace-nowrap"
+              className="text-xs px-2.5 py-1 rounded-full bg-slate-900 hover:bg-primary/20 text-slate-300 hover:text-primary-light border border-borderSubtle hover:border-primary/40 transition duration-150 whitespace-nowrap active:scale-[0.98] focus-ring"
             >
               🛡️ Policy Rules
             </button>
             <button
               onClick={() => handleSendMessage("How do I test custom transaction data in simulation?")}
-              className="text-xs px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-blue-600/30 text-slate-300 hover:text-blue-200 border border-slate-700/60 transition whitespace-nowrap"
+              className="text-xs px-2.5 py-1 rounded-full bg-slate-900 hover:bg-primary/20 text-slate-300 hover:text-primary-light border border-borderSubtle hover:border-primary/40 transition duration-150 whitespace-nowrap active:scale-[0.98] focus-ring"
             >
               🧪 Simulation Guide
             </button>
@@ -290,19 +299,19 @@ export function IntelligenceAssistantPanel() {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
+                className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"} animate-fade-in`}
               >
                 <div className="flex items-center gap-1.5 mb-1 px-1">
                   <span className="text-[10px] text-slate-400 font-medium">
                     {msg.sender === "user" ? "You" : "RecoverAI AI"}
                   </span>
-                  <span className="text-[10px] text-slate-500">• {msg.timestamp}</span>
+                  <span className="text-[10px] text-slate-500 font-mono">• {msg.timestamp}</span>
                 </div>
 
                 <div
                   className={`max-w-[92%] p-3.5 rounded-2xl text-xs leading-relaxed relative group ${
                     msg.sender === "user"
-                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-tr-none shadow-md shadow-blue-600/10 font-sans"
+                      ? "bg-gradient-to-r from-primary to-indigo-600 text-white rounded-tr-none shadow-md shadow-primary/20 font-sans"
                       : "bg-slate-900/90 text-slate-200 border border-slate-800 rounded-tl-none shadow-sm"
                   }`}
                 >
@@ -312,7 +321,7 @@ export function IntelligenceAssistantPanel() {
                       <button
                         onClick={() => copyMessageText(msg.text, msg.id)}
                         title="Copy message"
-                        className="absolute top-2.5 right-2.5 p-1 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 opacity-0 group-hover:opacity-100 transition"
+                        className="absolute top-2.5 right-2.5 p-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 opacity-0 group-hover:opacity-100 transition duration-150 focus-ring"
                       >
                         {copiedMsgId === msg.id ? (
                           <Check className="w-3 h-3 text-emerald-400" />
@@ -330,9 +339,9 @@ export function IntelligenceAssistantPanel() {
                     <div className="mt-3 pt-2.5 border-t border-slate-800/80">
                       <button
                         onClick={() => toggleTools(msg.id)}
-                        className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 hover:text-blue-300 transition py-0.5"
+                        className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 hover:text-primary-light transition duration-150 py-0.5 focus-ring rounded"
                       >
-                        <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                        <ShieldCheck className="w-3.5 h-3.5 text-primary" />
                         <span>Data sources used · {msg.toolsUsed.length}</span>
                         {expandedTools[msg.id] ? (
                           <ChevronUp className="w-3 h-3 text-slate-500" />
@@ -342,14 +351,14 @@ export function IntelligenceAssistantPanel() {
                       </button>
 
                       {expandedTools[msg.id] && (
-                        <div className="mt-2 space-y-1.5 pl-1 animate-in fade-in duration-150">
+                        <div className="mt-2 space-y-1.5 pl-1 animate-slide-up">
                           {msg.toolsUsed.map((t, idx) => (
                             <div
                               key={idx}
                               className="flex items-center gap-2 text-[11px] text-slate-300 bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/80"
                             >
                               <span className="text-emerald-400 font-bold text-[10px]">✓</span>
-                              <span className="font-semibold text-blue-300 capitalize">
+                              <span className="font-semibold text-primary-light capitalize">
                                 {t.tool_name.replace("get_", "").replace("_", " ")}
                               </span>
                               <span className="text-slate-400 text-[10px] truncate max-w-[240px]">
@@ -385,10 +394,10 @@ export function IntelligenceAssistantPanel() {
                       <button
                         key={idx}
                         onClick={() => handleActionClick(act)}
-                        className="text-[11px] px-2.5 py-1 bg-slate-900/90 hover:bg-blue-600/30 text-blue-300 hover:text-blue-100 rounded-lg border border-blue-500/30 transition flex items-center gap-1 shadow-sm"
+                        className="text-[11px] px-2.5 py-1 bg-slate-900/90 hover:bg-primary/20 text-primary-light hover:text-white rounded-lg border border-primary/30 transition duration-150 flex items-center gap-1 shadow-sm active:scale-[0.98] focus-ring"
                       >
                         <span>{act.label}</span>
-                        <ChevronRight className="w-3 h-3 text-blue-400" />
+                        <ChevronRight className="w-3 h-3 text-primary" />
                       </button>
                     ))}
                   </div>
@@ -398,8 +407,8 @@ export function IntelligenceAssistantPanel() {
 
             {/* Loading Indicator */}
             {loading && (
-              <div className="flex items-center gap-2 text-slate-400 text-xs py-2 px-1">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-400" />
+              <div className="flex items-center gap-2.5 text-slate-400 text-xs py-2 px-1 animate-pulse-subtle">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
                 <span>Evaluating context and querying verified data tools...</span>
               </div>
             )}
@@ -407,24 +416,26 @@ export function IntelligenceAssistantPanel() {
             <div ref={chatEndRef} />
           </div>
 
-          {/* Footer Input Bar */}
-          <div className="p-3 bg-slate-900/90 border-t border-slate-800/90 flex items-center gap-2">
-            <input
-              type="text"
+          {/* Footer Input Composer */}
+          <div className="p-3 bg-slate-900/90 border-t border-borderSubtle flex items-end gap-2">
+            <textarea
+              ref={inputRef}
+              rows={1}
               value={inputMsg}
               onChange={(e) => setInputMsg(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+              onKeyDown={handleKeyDown}
               placeholder={
                 pageContext === "recovery_case"
                   ? "Ask about this case or decision rationale..."
-                  : "Ask a general question or inquiry about metrics & policy rules..."
+                  : "Ask about recovery telemetry, policy rules, or ML metrics..."
               }
-              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30"
+              className="flex-1 max-h-24 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus-ring resize-none transition duration-150"
             />
             <button
               onClick={() => handleSendMessage()}
               disabled={!inputMsg.trim() || loading}
-              className="p-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white rounded-xl transition shadow-md shadow-blue-600/20"
+              className="p-2.5 bg-primary hover:bg-primary-hover disabled:opacity-40 disabled:hover:bg-primary text-white rounded-xl transition duration-150 shadow-md shadow-primary/25 active:scale-[0.98] shrink-0 focus-ring"
+              title="Send message (Enter)"
             >
               <Send className="w-4 h-4" />
             </button>
