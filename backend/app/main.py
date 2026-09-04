@@ -69,6 +69,9 @@ async def recover_ai_exception_handler(request: Request, exc: RecoverAIException
     )
 
 
+from fastapi.encoders import jsonable_encoder
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     corr_id = getattr(request.state, "correlation_id", "req_unknown")
@@ -80,7 +83,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
                 "code": "VALIDATION_ERROR",
                 "message": "Invalid request parameter or payload structure.",
                 "request_id": corr_id,
-                "details": {"errors": exc.errors()},
+                "details": {"errors": jsonable_encoder(exc.errors())},
             }
         },
     )

@@ -64,6 +64,7 @@ class RiskAssessmentService:
             confidence=round(prob, 4),
             model_version="v1.0.0-gbm",
             features_version="v1.0.0",
+            is_simulation=transaction_data.get("is_simulation", False),
         )
         db.add(assessment)
         await db.commit()

@@ -78,3 +78,8 @@ async def client(db_session):
 
     if hasattr(app.state, "test_session_factory"):
         delattr(app.state, "test_session_factory")
+
+
+@pytest.fixture
+def admin_headers():
+    return {"X-User-Role": "ADMIN"}

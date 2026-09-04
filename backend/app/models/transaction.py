@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Numeric, JSON
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Numeric, JSON, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 import uuid
@@ -55,6 +55,24 @@ class Transaction(Base):
         nullable=False,
         index=True,
     )  # AUTHORIZED, CAPTURED, FAILED, REFUNDED
+
+    initial_status = Column(
+        String(50),
+        nullable=True,
+        index=True,
+    )  # Historical status at creation (e.g., FAILED before recovery to CAPTURED)
+
+    is_simulation = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        index=True,
+    )
+
+    def __init__(self, **kwargs):
+        if "initial_status" not in kwargs and "status" in kwargs:
+            kwargs["initial_status"] = kwargs["status"]
+        super().__init__(**kwargs)
 
     failure_reason = Column(
         String(255),

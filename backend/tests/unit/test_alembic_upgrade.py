@@ -47,7 +47,7 @@ def test_alembic_upgrade_and_downgrade(sqlite_url: str, monkeypatch: pytest.Monk
 
     with engine.connect() as conn:
         version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-        assert version == "001_initial"
+        assert version == "002_simulation_isolation"
 
     command.downgrade(cfg, "base")
     inspector = inspect(engine)

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey, Float, Numeric
+from sqlalchemy import Column, String, DateTime, ForeignKey, Float, Numeric, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 import uuid
@@ -16,6 +16,7 @@ class RevenueRiskAssessment(Base):
     confidence = Column(Float, nullable=False) # Model confidence 0.0 to 1.0
     model_version = Column(String(50), nullable=False, default="v1.0.0-xgb")
     features_version = Column(String(50), nullable=False, default="v1.0.0")
+    is_simulation = Column(Boolean, nullable=False, default=False, index=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships

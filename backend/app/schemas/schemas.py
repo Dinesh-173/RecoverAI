@@ -1,7 +1,54 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
+
+class CustomTransactionInput(BaseModel):
+    transaction_id: str
+    transaction_date: Optional[datetime] = None
+    amount: float
+    currency: str = "INR"
+    payment_method: str = "UPI"
+    failure_code: str = "GATEWAY_ERROR"
+    failure_reason: Optional[str] = None
+    retry_attempt: int = 1
+    customer_opt_out: bool = False
+    risk_flag: bool = False
+    customer_name: Optional[str] = None
+    customer_email: Optional[str] = None
+    customer_segment: Optional[str] = "STANDARD"
+
+    @field_validator("amount")
+    @classmethod
+    def validate_amount(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError("amount must be non-negative (>= 0)")
+        return v
+
+    @field_validator("retry_attempt")
+    @classmethod
+    def validate_retry(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("retry_attempt must be >= 1")
+        return v
+
+    @field_validator("transaction_id")
+    @classmethod
+    def validate_tx_id(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("transaction_id must be a non-empty string")
+        return v.strip()
+
+
+class SimulationRunRequest(BaseModel):
+    scenario_name: Optional[str] = "default_batch"
+    batch_size: int = 10
+    source: Optional[str] = "predefined"
+    custom_transactions: Optional[List[CustomTransactionInput]] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    enable_ai_agent: bool = True
+    enable_policy_engine: bool = True
 
 class MerchantBase(BaseModel):
     name: str
@@ -52,6 +99,8 @@ class TransactionBase(BaseModel):
     currency: str = "INR"
     payment_method: str = "UPI"
     status: str
+    initial_status: Optional[str] = None
+    is_simulation: bool = False
     failure_reason: Optional[str] = None
     failure_code: Optional[str] = None
     attempt_number: int = 1
@@ -154,6 +203,7 @@ class DashboardMetrics(BaseModel):
     revenue_at_risk: float
     recovered_revenue: float
     expected_recoverable_revenue: float
+    expected_recoverable_revenue_open: Optional[float] = None
     recovery_rate: float
     open_cases: int
     pending_approvals: int
@@ -173,6 +223,10 @@ class DashboardMetrics(BaseModel):
 class SimulationRunRequest(BaseModel):
     scenario_name: Optional[str] = "default_batch"
     batch_size: int = 10
+    source: Optional[str] = "predefined"
+    custom_transactions: Optional[List[CustomTransactionInput]] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
     enable_ai_agent: bool = True
     enable_policy_engine: bool = True
 
@@ -190,3 +244,37 @@ class SimulationRunResponse(BaseModel):
     value_add_percentage: float
     execution_duration_ms: float
     cases: List[Dict[str, Any]] = []
+
+
+class SuggestedAction(BaseModel):
+    label: str
+    action_type: str
+    payload: Dict[str, Any] = {}
+
+
+class ToolExecutionLog(BaseModel):
+    tool_name: str
+    status: str
+    summary: str
+
+
+class AssistantCitation(BaseModel):
+    source_type: str
+    title: str
+    reference_id: Optional[str] = None
+
+
+class AssistantChatRequest(BaseModel):
+    message: str
+    conversation_id: Optional[str] = None
+    page_context: Optional[str] = "dashboard"
+    entity_id: Optional[str] = None
+    presentation_mode: Optional[bool] = False
+
+
+class AssistantChatResponse(BaseModel):
+    message: str
+    conversation_id: str
+    tools_used: List[ToolExecutionLog] = []
+    citations: List[AssistantCitation] = []
+    suggested_actions: List[SuggestedAction] = []
