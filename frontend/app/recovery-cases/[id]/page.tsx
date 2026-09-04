@@ -17,6 +17,9 @@ import {
   RefreshCw,
   ExternalLink,
   ShieldAlert,
+  HelpCircle,
+  Info,
+  Lock,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { RecoveryCaseDetail } from "@/lib/types";
@@ -30,6 +33,7 @@ export default function CaseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [showExplainModal, setShowExplainModal] = useState(false);
 
   const fetchCase = async () => {
     try {
@@ -121,6 +125,14 @@ export default function CaseDetailPage() {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={() => setShowExplainModal(true)}
+              className="px-3.5 py-2 rounded-lg bg-blue-950/40 hover:bg-blue-900/40 border border-blue-800/60 text-blue-300 text-sm font-semibold flex items-center gap-2 transition"
+            >
+              <HelpCircle className="w-4 h-4 text-blue-400" />
+              <span>Why Did RecoverAI Do This?</span>
+            </button>
+
+            <button
               disabled={actionLoading}
               onClick={handleAnalyze}
               className="px-3.5 py-2 rounded-lg bg-surface hover:bg-surfaceHover border border-border text-slate-200 text-sm font-medium flex items-center gap-2 transition disabled:opacity-50"
@@ -158,6 +170,63 @@ export default function CaseDetailPage() {
             <button onClick={() => setMsg(null)} className="text-muted hover:text-white">&times;</button>
           </div>
         )}
+      </div>
+
+      {/* Autonomous Decision Pipeline Flow */}
+      <div className="p-6 rounded-xl border border-border bg-surface space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-blue-400" />
+            <h2 className="text-base font-bold text-white">Autonomous Decision Pipeline</h2>
+          </div>
+          <span className="text-xs text-muted font-mono">Architecture: AI Advisory + Policy Authoritative</span>
+        </div>
+
+        <div className="p-4 rounded-lg bg-background/60 border border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-center text-xs">
+            <div className="p-3 rounded-lg bg-surface border border-border flex flex-col justify-between">
+              <span className="text-[10px] uppercase text-muted font-semibold">1. Transaction</span>
+              <span className="font-bold text-white text-sm mt-1">{formatCurrency(tx?.amount || 0)}</span>
+              <span className="text-[10px] text-rose-400 mt-1">{tx?.failure_code}</span>
+            </div>
+
+            <div className="p-3 rounded-lg bg-surface border border-border flex flex-col justify-between">
+              <span className="text-[10px] uppercase text-muted font-semibold">2. ML Assessment</span>
+              <span className="font-bold text-blue-400 text-sm mt-1">{caseData.recovery_score.toFixed(1)}/100</span>
+              <span className="text-[10px] text-muted mt-1">{caseData.risk_level} Risk</span>
+            </div>
+
+            <div className="p-3 rounded-lg bg-surface border border-blue-900/40 flex flex-col justify-between">
+              <span className="text-[10px] uppercase text-blue-400 font-semibold">3. AI Agent (Advisory)</span>
+              <span className="font-bold text-white text-xs mt-1 font-mono">{caseData.recommended_action || "NONE"}</span>
+              <span className="text-[10px] text-blue-300 mt-1">{((caseData.confidence || 0) * 100).toFixed(0)}% Conf</span>
+            </div>
+
+            <div className="p-3 rounded-lg bg-surface border border-purple-900/40 flex flex-col justify-between">
+              <span className="text-[10px] uppercase text-purple-400 font-semibold">4. Policy Engine</span>
+              <span className="font-bold text-purple-300 text-xs mt-1 font-mono">
+                {caseData.requires_human_approval ? "ESCALATE" : "AUTHORIZATION"}
+              </span>
+              <span className="text-[10px] text-muted mt-1">Rule Bound Check</span>
+            </div>
+
+            <div className="p-3 rounded-lg bg-emerald-950/30 border border-emerald-800/40 flex flex-col justify-between">
+              <span className="text-[10px] uppercase text-emerald-400 font-semibold">5. Final Decision</span>
+              <span className="font-bold text-emerald-400 text-xs mt-1 font-mono">{caseData.status}</span>
+              <span className="text-[10px] text-emerald-300 mt-1">Safe Execution</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-lg bg-blue-950/20 border border-blue-800/30 text-xs text-blue-300 flex items-center justify-between font-mono">
+          <span>AI proposed the action. Policy Engine made the final decision.</span>
+          <button
+            onClick={() => setShowExplainModal(true)}
+            className="text-blue-400 underline hover:text-white"
+          >
+            Explain Decision Rationale
+          </button>
+        </div>
       </div>
 
       {/* Grid: Context & Diagnostics */}
@@ -353,6 +422,70 @@ export default function CaseDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* "Why Did RecoverAI Do This?" Explainability Modal */}
+      {showExplainModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-surface border border-border rounded-xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-blue-400" />
+                <h3 className="text-base font-bold text-white">Why Did RecoverAI Do This?</h3>
+              </div>
+              <button
+                onClick={() => setShowExplainModal(false)}
+                className="text-muted hover:text-white text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="p-3.5 rounded-lg bg-blue-950/30 border border-blue-800/40 space-y-1.5">
+                <span className="font-bold text-blue-300 text-sm block">1. AI Advisory Recommendation</span>
+                <p className="text-slate-200">
+                  The LLM Diagnostic Agent recommended <span className="font-mono font-bold text-white">{caseData.recommended_action}</span> with a confidence score of <span className="font-mono text-blue-400">{((caseData.confidence || 0) * 100).toFixed(0)}%</span> based on historical success rates for {tx?.payment_method} failures ({tx?.failure_code}).
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-purple-950/30 border border-purple-800/40 space-y-1.5">
+                <span className="font-bold text-purple-300 text-sm block">2. Policy Engine Evaluation (Authoritative)</span>
+                <p className="text-slate-200">
+                  {caseData.requires_human_approval ? (
+                    <>
+                      The Deterministic Policy Engine intercepted the AI proposal because the transaction amount (<span className="font-mono font-bold text-white">{formatCurrency(tx?.amount || 0)}</span>) exceeds the high-value merchant threshold (<span className="font-mono text-amber-400">₹10,000</span>). The Policy Engine required human authorization before payment execution.
+                    </>
+                  ) : caseData.status === "STOPPED" ? (
+                    <>
+                      The Policy Engine halted recovery due to policy boundary bounds (retry limit reached, opt-out status, or security block).
+                    </>
+                  ) : (
+                    <>
+                      The Policy Engine verified that all safety rules passed: transaction amount is under threshold, retry attempt is within limit (2), customer has not opted out, and no risk flags exist.
+                    </>
+                  )}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-emerald-950/30 border border-emerald-800/40 space-y-1.5">
+                <span className="font-bold text-emerald-300 text-sm block">3. Execution Authority & Isolation</span>
+                <p className="text-slate-200">
+                  The final status is <span className="font-mono font-bold text-emerald-400">{caseData.status}</span>. Payment execution is handled by the isolated Payment Adapter under strict idempotency guarantees.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-border flex justify-end">
+              <button
+                onClick={() => setShowExplainModal(false)}
+                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

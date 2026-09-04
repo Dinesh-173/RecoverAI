@@ -133,6 +133,7 @@ class RecoveryService:
                 status="OPEN",
                 risk_level="HIGH" if assessment.risk_score > 60 else ("MEDIUM" if assessment.risk_score > 30 else "LOW"),
                 is_simulation=tx.is_simulation,
+                created_at=tx.created_at or datetime.now(timezone.utc),
             )
             db.add(rec_case)
 

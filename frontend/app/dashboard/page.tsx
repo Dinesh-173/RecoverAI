@@ -222,7 +222,9 @@ export default function DashboardPage() {
                   tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "#111726", borderColor: "#1E293B", borderRadius: "8px" }}
+                  contentStyle={{ backgroundColor: "#111726", borderColor: "#334155", borderRadius: "8px", color: "#F8FAFC" }}
+                  itemStyle={{ color: "#F8FAFC" }}
+                  labelStyle={{ color: "#94A3B8" }}
                   formatter={(val: any) => [formatCurrency(Number(val)), ""]}
                 />
                 <Area type="monotone" dataKey="risk" stroke="#EF4444" fillOpacity={1} fill="url(#colorRisk)" name="Revenue at Risk" />
@@ -255,7 +257,9 @@ export default function DashboardPage() {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ backgroundColor: "#111726", borderColor: "#1E293B", borderRadius: "8px" }}
+                  contentStyle={{ backgroundColor: "#111726", borderColor: "#334155", borderRadius: "8px", color: "#F8FAFC" }}
+                  itemStyle={{ color: "#F8FAFC" }}
+                  labelStyle={{ color: "#94A3B8" }}
                   formatter={(val: any) => [formatCurrency(Number(val)), "Volume"]}
                 />
               </PieChart>
@@ -294,7 +298,9 @@ export default function DashboardPage() {
                 tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: "#111726", borderColor: "#1E293B", borderRadius: "8px" }}
+                contentStyle={{ backgroundColor: "#111726", borderColor: "#334155", borderRadius: "8px", color: "#F8FAFC" }}
+                itemStyle={{ color: "#F8FAFC" }}
+                labelStyle={{ color: "#94A3B8" }}
                 formatter={(val: any) => [formatCurrency(Number(val)), "Volume at Risk"]}
               />
               <Bar dataKey="volume" fill="#3B82F6" radius={[4, 4, 0, 0]} />

@@ -56,3 +56,7 @@ Thumbs.db
 ml/data/train.csv
 ml/data/val.csv
 ml/data/test.csv
+
+# Track frontend application library files
+!frontend/lib/
+!frontend/lib/**
